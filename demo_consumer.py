@@ -38,8 +38,8 @@ def main():
 			if (msg.value() is not None):
 				feed_entity = gtfs_realtime_pb2.FeedEntity()
 				feed_entity.ParseFromString(msg.value())
-				print(feed_entity)
 				print("Received message: {}".format(feed_entity.id))
+				print(feed_entity)
 			else:
 				print("Received empty message")
 
