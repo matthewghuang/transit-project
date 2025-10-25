@@ -1,0 +1,16 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+.env.influxdb2-admin-token
+.env.influxdb2-admin-username
+.env.influxdb2-admin-password
+
+.env
