@@ -1,8 +1,16 @@
 from confluent_kafka import Consumer, KafkaError
 from google.transit import gtfs_realtime_pb2
 from google.protobuf import json_format
-import google.protobuf
-import json
+from dotenv import load_dotenv
+import os
+
+def load_token(file):
+	with open(file, 'r') as f:
+		return f.read().strip()
+
+INFLUXDB2_ADMIN_USERNAME = load_token('.env.influxdb2-admin-username')
+INFLUXDB2_ADMIN_PASSWORD = load_token('.env.influxdb2-admin-password')
+INFLUXDB2_ADMIN_TOKEN = load_token('.env.influxdb2-admin-token')
 
 def main():
 	kafka_config = {
