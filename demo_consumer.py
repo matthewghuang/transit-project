@@ -1,18 +1,28 @@
+import time
 from confluent_kafka import Consumer, KafkaError
 from google.transit import gtfs_realtime_pb2
 from google.protobuf import json_format
-import google.protobuf
+from dotenv import load_dotenv
+import os
 import json
+import pandas as pd
+
+current_data = {}
+
+routes = pd.read_csv(filepath_or_buffer="google_transit/routes.txt", sep=",")
+
+def analytics():
+	print(current_data)
 
 def main():
 	kafka_config = {
 		'bootstrap.servers': 'localhost:9092',
-		'group.id': 'trip-update-consumers',
+		'group.id': 'position-consumers',
 		'auto.offset.reset': 'earliest'
 	}
-
+ 
 	consumer = Consumer(kafka_config)
-	consumer.subscribe(['trip-updates'])
+	consumer.subscribe(['position'])
 
 	try:
 		while True:
@@ -30,11 +40,16 @@ def main():
 			if (msg.value() is not None):
 				feed_entity = gtfs_realtime_pb2.FeedEntity()
 				feed_entity.ParseFromString(msg.value())
-				print(feed_entity)
 				print("Received message: {}".format(feed_entity.id))
+    
+				current_data[feed_entity.id] = feed_entity
+    
+				analytics()
+    
+				time.sleep(1)
 			else:
-				print("Received empty message")
-
+				print(f"Received empty message, deleting {feed_entity.id}")
+				del current_data[feed_entity.id]
 	except KeyboardInterrupt:
 		pass
 	finally:

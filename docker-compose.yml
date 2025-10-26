@@ -1,33 +1,43 @@
 services:
-  influxdb2:
-    image: influxdb:2
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    container_name: zookeeper
+    hostname: zookeeper
     ports:
-      - 8086:8086
+      - "2181:2181"
     environment:
-      DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME_FILE: /run/secrets/influxdb2-admin-username
-      DOCKER_INFLUXDB_INIT_PASSWORD_FILE: /run/secrets/influxdb2-admin-password
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN_FILE: /run/secrets/influxdb2-admin-token
-      DOCKER_INFLUXDB_INIT_ORG: docs
-      DOCKER_INFLUXDB_INIT_BUCKET: home
-    secrets:
-      - influxdb2-admin-username
-      - influxdb2-admin-password
-      - influxdb2-admin-token
-    volumes:
-      - type: volume
-        source: influxdb2-data
-        target: /var/lib/influxdb2
-      - type: volume
-        source: influxdb2-config
-        target: /etc/influxdb2
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    container_name: kafka
+    hostname: kafka
+    ports:
+      # Port for external connections (e.g., from your Python app on host)
+      - "9092:9092"
+      # Port for internal connections within the Docker network
+      - "29092:29092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      # Listeners configuration:
+      # PLAINTEXT://kafka:29092 is for internal communication between containers
+      # PLAINTEXT_HOST://localhost:9092 is for your Python app on the host machine
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
 secrets:
   influxdb2-admin-username:
-    file: ~/.env.influxdb2-admin-username
+    file: .env.influxdb2-admin-username
   influxdb2-admin-password:
-    file: ~/.env.influxdb2-admin-password
+    file: .env.influxdb2-admin-password
   influxdb2-admin-token:
-    file: ~/.env.influxdb2-admin-token
+    file: .env.influxdb2-admin-token
 volumes:
   influxdb2-data:
   influxdb2-config:
