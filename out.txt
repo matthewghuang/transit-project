@@ -1,0 +1,24 @@
+Received message: 14674633
+{'14674633': id: "14674633"
+vehicle {
+  trip {
+    trip_id: "14674633"
+    start_date: "20251025"
+    schedule_relationship: SCHEDULED
+    route_id: "6616"
+    direction_id: 1
+  }
+  position {
+    latitude: 49.2809
+    longitude: -123.131935
+  }
+  current_stop_sequence: 10
+  current_status: IN_TRANSIT_TO
+  timestamp: 1761447898
+  stop_id: "49"
+  vehicle {
+    id: "2249"
+    label: "2249"
+  }
+}
+}

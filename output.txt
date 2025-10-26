@@ -1,0 +1,198 @@
+Received message: 14672820
+id: "14672820"
+is_deleted: false
+trip_update {
+  trip {
+    trip_id: "14672820"
+    start_date: "20251025"
+    schedule_relationship: SCHEDULED
+    route_id: "6613"
+    direction_id: 0
+  }
+  stop_time_update {
+    stop_sequence: 25
+    arrival {
+      delay: 286
+      time: 1761438851
+    }
+    departure {
+      delay: 286
+      time: 1761438851
+    }
+    stop_id: "174"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 26
+    arrival {
+      delay: 335
+      time: 1761438995
+    }
+    departure {
+      delay: 335
+      time: 1761438995
+    }
+    stop_id: "176"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 27
+    arrival {
+      delay: 323
+      time: 1761439067
+    }
+    departure {
+      delay: 323
+      time: 1761439067
+    }
+    stop_id: "177"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 28
+    arrival {
+      delay: 304
+      time: 1761439103
+    }
+    departure {
+      delay: 304
+      time: 1761439103
+    }
+    stop_id: "178"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 29
+    arrival {
+      delay: 264
+      time: 1761439142
+    }
+    departure {
+      delay: 264
+      time: 1761439142
+    }
+    stop_id: "13090"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 30
+    arrival {
+      delay: 215
+      time: 1761439180
+    }
+    departure {
+      delay: 215
+      time: 1761439180
+    }
+    stop_id: "180"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 31
+    arrival {
+      delay: 195
+      time: 1761439265
+    }
+    departure {
+      delay: 195
+      time: 1761439265
+    }
+    stop_id: "181"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 32
+    arrival {
+      delay: 166
+      time: 1761439313
+    }
+    departure {
+      delay: 166
+      time: 1761439313
+    }
+    stop_id: "182"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 33
+    arrival {
+      delay: 144
+      time: 1761439439
+    }
+    departure {
+      delay: 144
+      time: 1761439439
+    }
+    stop_id: "184"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 34
+    arrival {
+      delay: 187
+      time: 1761439595
+    }
+    departure {
+      delay: 187
+      time: 1761439595
+    }
+    stop_id: "3428"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 35
+    arrival {
+      delay: 163
+      time: 1761439709
+    }
+    departure {
+      delay: 163
+      time: 1761439709
+    }
+    stop_id: "186"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 36
+    arrival {
+      delay: 153
+      time: 1761439774
+    }
+    departure {
+      delay: 153
+      time: 1761439774
+    }
+    stop_id: "3429"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 37
+    arrival {
+      delay: 145
+      time: 1761439839
+    }
+    departure {
+      delay: 145
+      time: 1761439839
+    }
+    stop_id: "188"
+    schedule_relationship: SCHEDULED
+  }
+  stop_time_update {
+    stop_sequence: 38
+    arrival {
+      delay: 156
+      time: 1761439928
+    }
+    departure {
+      delay: 156
+      time: 1761439928
+    }
+    stop_id: "859"
+    schedule_relationship: SCHEDULED
+  }
+  vehicle {
+    id: "2565"
+    label: "2565"
+  }
+}

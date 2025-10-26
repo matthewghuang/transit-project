@@ -1,26 +1,28 @@
+import time
 from confluent_kafka import Consumer, KafkaError
 from google.transit import gtfs_realtime_pb2
 from google.protobuf import json_format
 from dotenv import load_dotenv
 import os
+import json
+import pandas as pd
 
-def load_token(file):
-	with open(file, 'r') as f:
-		return f.read().strip()
+current_data = {}
 
-INFLUXDB2_ADMIN_USERNAME = load_token('.env.influxdb2-admin-username')
-INFLUXDB2_ADMIN_PASSWORD = load_token('.env.influxdb2-admin-password')
-INFLUXDB2_ADMIN_TOKEN = load_token('.env.influxdb2-admin-token')
+routes = pd.read_csv(filepath_or_buffer="google_transit/routes.txt", sep=",")
+
+def analytics():
+	print(current_data)
 
 def main():
 	kafka_config = {
 		'bootstrap.servers': 'localhost:9092',
-		'group.id': 'trip-update-consumers',
+		'group.id': 'position-consumers',
 		'auto.offset.reset': 'earliest'
 	}
-
+ 
 	consumer = Consumer(kafka_config)
-	consumer.subscribe(['trip-updates'])
+	consumer.subscribe(['position'])
 
 	try:
 		while True:
@@ -39,10 +41,15 @@ def main():
 				feed_entity = gtfs_realtime_pb2.FeedEntity()
 				feed_entity.ParseFromString(msg.value())
 				print("Received message: {}".format(feed_entity.id))
-				print(feed_entity)
+    
+				current_data[feed_entity.id] = feed_entity
+    
+				analytics()
+    
+				time.sleep(1)
 			else:
-				print("Received empty message")
-
+				print(f"Received empty message, deleting {feed_entity.id}")
+				del current_data[feed_entity.id]
 	except KeyboardInterrupt:
 		pass
 	finally:
