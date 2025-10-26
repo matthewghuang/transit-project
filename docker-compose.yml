@@ -30,14 +30,19 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-
-secrets:
-  influxdb2-admin-username:
-    file: .env.influxdb2-admin-username
-  influxdb2-admin-password:
-    file: .env.influxdb2-admin-password
-  influxdb2-admin-token:
-    file: .env.influxdb2-admin-token
-volumes:
-  influxdb2-data:
-  influxdb2-config:
+  myapplication:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    environment:
+      - CONN_STR=mongodb://user:pass@mongodb
+    command: '/bin/bash -c "sleep 5; mongosh $$CONN_STR --eval \"show dbs;\""'
+    depends_on:
+      - mongodb
+  mongodb:
+    image: mongodb/mongodb-community-server:6.0-ubi8
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=user
+      - MONGO_INITDB_ROOT_PASSWORD=pass
+    volumes:
+      - type: bind
+        source: ./data
+        target: /data/db
