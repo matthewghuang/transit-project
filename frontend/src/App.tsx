@@ -1,11 +1,16 @@
 import "./App.css";
 import { Map } from "./Map";
-import { usePosition } from "./Data";
+import { usePositions } from "./hooks/usePositions";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 export function App() {
   return (
     <>
-      <Map className="map"></Map>
+      <QueryClientProvider client={queryClient}>
+        <Map className="map"></Map>
+      </QueryClientProvider>
     </>
   );
 }

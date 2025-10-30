@@ -8,6 +8,8 @@
     "build": "parcel build"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.90.5",
+    "ky": "^1.13.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-leaflet": "^5.0.0-rc.2",
