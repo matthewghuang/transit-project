@@ -51,7 +51,7 @@ def main():
 	collection = database["vehicle"]
  
 	# remove old records using TTL index
-	collection.create_index(keys=[("timestamp", pymongo.ASCENDING)], expireAfterSeconds=60)
+	collection.create_index(keys=[("timestamp", pymongo.ASCENDING)], expireAfterSeconds=300)
 
 	try:
 		while True:
@@ -89,7 +89,7 @@ def main():
 	
 				collection.replace_one({'_id': feed_entity.id}, feed_entity_as_dict, upsert=True)
 	
-				time.sleep(0.1)
+				# time.sleep(0.1)
 			else:
 				if feed_entity.id:
 					print(feed_entity)

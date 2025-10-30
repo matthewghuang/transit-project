@@ -7,6 +7,7 @@ import os
 from dotenv import load_dotenv
 from typing import Optional, List
 from typing_extensions import Annotated
+import datetime
 
 app = FastAPI(
 	title="Realtime Transit Data API"
@@ -68,10 +69,11 @@ class VehicleUpdate(BaseModel):
 	# Use 'alias' to handle the field name '_id' 
 	# which is awkward in Python.
 	mongo_id: PyObjectId = Field(alias='_id')
+	timestamp: datetime
 	model_config = BASE_MODEL_CONFIG
 
 @app.get(
-    "/vehicles/",
+    "/api/vehicles/",
     response_model=List[VehicleUpdate],
     summary="Get All Vehicle Positions",
     description="Retrieves a list of all current vehicle position documents from the database."
