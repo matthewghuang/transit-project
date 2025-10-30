@@ -5,6 +5,6 @@ export const usePositions = () => {
   return useQuery({
     queryKey: ["todos"],
     queryFn: fetchPositions,
-    refetchInterval: 60 * 1000,
+    refetchInterval: 15 * 1000,
   });
 };
