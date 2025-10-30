@@ -1,0 +1,23 @@
+/* html {
+  color-scheme: light dark;
+  font-family: system-ui;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+} */
+
+html {
+  font-family: sans-serif;
+}
+
+.map {
+  height: 600px;
+}
+
+@media (min-width: 900px) {
+  main {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+  }
+}
