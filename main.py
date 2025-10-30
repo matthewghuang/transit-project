@@ -42,7 +42,6 @@ def poll():
 		print(f"Feed parse error: {e}")
 		return # Skip this poll cycle
 
-	seen = set()
 	updated_count = 0
  
 	for entity in feed.entity:
@@ -50,7 +49,6 @@ def poll():
 			continue # Ignore entities without an ID
 
 		serialized = entity.SerializeToString()
-		seen.add(entity.id)
 
 		# if first poll send everything
 		if first_poll:
@@ -65,16 +63,6 @@ def poll():
     
 	print(f"updated: {updated_count}, total: {len(feed.entity)}")
     
-	to_remove = [id for id in cache.keys() if id not in seen]
- 
-	for id in to_remove:
-		print("removing", id)
-		producer.produce("position", key=id, value=None)
-		del cache[id]
-  
-	if len(to_remove) > 0:
-		print(f"removed: {len(to_remove)}")
-		
 	producer.flush()
  
 	first_poll = False
