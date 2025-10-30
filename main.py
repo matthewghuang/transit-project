@@ -68,6 +68,7 @@ def poll():
 	to_remove = [id for id in cache.keys() if id not in seen]
  
 	for id in to_remove:
+		print("removing", id)
 		producer.produce("position", key=id, value=None)
 		del cache[id]
   
