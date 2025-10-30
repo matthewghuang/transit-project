@@ -1,7 +1,7 @@
 import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import { LatLngTuple } from "leaflet";
 
-const position: LatLngTuple = [51.505, -0.09];
+const position: LatLngTuple = [49.246292, -123.116226];
 
 let Map: React.FC<{ className?: string }> = ({ className }) => {
   return (
@@ -15,11 +15,6 @@ let Map: React.FC<{ className?: string }> = ({ className }) => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Marker position={position}>
-        <Popup>
-          A pretty CSS3 popup. <br /> Easily customizable.
-        </Popup>
-      </Marker>
     </MapContainer>
   );
 };
