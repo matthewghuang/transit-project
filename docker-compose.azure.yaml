@@ -1,29 +1,82 @@
-# Example for Azure Container Apps / App Service multi-container
+# Low-cost Azure Deployment for B1s (1GB RAM)
 version: '3.8'
 
 services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.0.1
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  kafka:
+    image: confluentinc/cp-kafka:7.0.1
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_HEAP_OPTS: "-Xms128M -Xmx128M" # Very strict for B1s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+  mongo:
+    image: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    command: ["--wiredTigerCacheSizeGB", "0.1"] # Tiny cache for 1GB VM
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
   api:
     build: .
     ports:
       - "8000:8000"
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=YOUR_AZURE_EVENT_HUBS_NAMESPACE.servicebus.windows.net:9093
-      - MONGO_CONNECTION_STRING=mongodb://YOUR_COSMOS_DB_ACCOUNT.mongo.cosmos.azure.com:10255/...
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - MONGO_HOST=mongo
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
       - API_KEY=${API_KEY}
-    command: ["fastapi", "run", "api.py", "--port", "8000", "--host", "0.0.0.0"]
+    deploy:
+      resources:
+        limits:
+          memory: 128M
 
   producer:
     build: .
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=YOUR_AZURE_EVENT_HUBS_NAMESPACE.servicebus.windows.net:9093
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
       - API_KEY=${API_KEY}
     command: ["python", "main.py"]
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 96M
 
   consumer:
     build: .
     environment:
-      - KAFKA_BOOTSTRAP_SERVERS=YOUR_AZURE_EVENT_HUBS_NAMESPACE.servicebus.windows.net:9093
-      - MONGO_CONNECTION_STRING=mongodb://YOUR_COSMOS_DB_ACCOUNT.mongo.cosmos.azure.com:10255/...
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - MONGO_HOST=mongo
+      - MONGO_USER=${MONGO_USER}
+      - MONGO_PASSWORD=${MONGO_PASSWORD}
     command: ["python", "demo_consumer.py"]
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 128M

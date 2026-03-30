@@ -2,34 +2,39 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.0.1
     container_name: zookeeper-transit
-    hostname: zookeeper
-    ports:
-      - "2181:2181"
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
   kafka:
     image: confluentinc/cp-kafka:7.0.1
     container_name: kafka-transit
-    hostname: kafka
     ports:
-      # Port for external connections (e.g., from your Python app on host)
       - "9092:9092"
-      # Port for internal connections within the Docker network
       - "29092:29092"
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
-      # Listeners configuration:
-      # PLAINTEXT://kafka:29092 is for internal communication between containers
-      # PLAINTEXT_HOST://localhost:9092 is for your Python app on the host machine
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      # IMPORTANT: Limit Kafka JVM heap size for 1GB RAM VM
+      KAFKA_HEAP_OPTS: "-Xms256M -Xmx256M"
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+        reservations:
+          memory: 256M
 
   mongo:
     image: mongo
@@ -39,7 +44,15 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+    command: ["--wiredTigerCacheSizeGB", "0.25"] # Limit MongoDB cache
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
 
+  # Optional: You might want to disable mongo-express on a B1s to save RAM
   mongo-express:
     image: mongo-express
     restart: always
@@ -47,13 +60,11 @@ services:
       - 8081:8081
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://${MONGO_USER}:${MONGO_PASSWORD}@mongo:27017/
-      # ME_CONFIG_MONGODB_ENABLE_ADMIN: "false"
-      # ME_CONFIG_MONGODB_AUTH_DATABASE: "admin"
-      # ME_CONFIG_MONGODB_AUTH_USERNAME: ${MONGO_USER}
-      # ME_CONFIG_MONGODB_AUTH_PASSWORD: ${MONGO_PASSWORD}
-      ME_CONFIG_BASICAUTH_USERNAME: mongoexpressuser
-      ME_CONFIG_BASICAUTH_PASSWORD: mongoexpresspass
       ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_USER}
       ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD}
     depends_on:
       - mongo
+    deploy:
+      resources:
+        limits:
+          memory: 64M
