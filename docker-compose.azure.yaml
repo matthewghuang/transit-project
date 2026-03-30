@@ -1,0 +1,29 @@
+# Example for Azure Container Apps / App Service multi-container
+version: '3.8'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=YOUR_AZURE_EVENT_HUBS_NAMESPACE.servicebus.windows.net:9093
+      - MONGO_CONNECTION_STRING=mongodb://YOUR_COSMOS_DB_ACCOUNT.mongo.cosmos.azure.com:10255/...
+      - API_KEY=${API_KEY}
+    command: ["fastapi", "run", "api.py", "--port", "8000", "--host", "0.0.0.0"]
+
+  producer:
+    build: .
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=YOUR_AZURE_EVENT_HUBS_NAMESPACE.servicebus.windows.net:9093
+      - API_KEY=${API_KEY}
+    command: ["python", "main.py"]
+    restart: always
+
+  consumer:
+    build: .
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=YOUR_AZURE_EVENT_HUBS_NAMESPACE.servicebus.windows.net:9093
+      - MONGO_CONNECTION_STRING=mongodb://YOUR_COSMOS_DB_ACCOUNT.mongo.cosmos.azure.com:10255/...
+    command: ["python", "demo_consumer.py"]
+    restart: always

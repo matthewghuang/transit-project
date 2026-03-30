@@ -9,17 +9,28 @@ from typing import Optional, List
 from typing_extensions import Annotated
 import datetime
 
+from fastapi.staticfiles import StaticFiles
+
 app = FastAPI(
-	title="Realtime Transit Data API"
+	title="Realtime Transit Dashboard API"
 )
 
 load_dotenv()
 
-MONGO_CONNECTION_STRING = f"mongodb://{os.getenv("MONGO_USER")}:{os.getenv("MONGO_PASSWORD")}@localhost:27017/"
+MONGO_USER = os.getenv("MONGO_USER", "root")
+MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "example")
+MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
+MONGO_PORT = os.getenv("MONGO_PORT", "27017")
+MONGO_DB = os.getenv("MONGO_DB", "position")
+
+if os.getenv("MONGO_CONNECTION_STRING"):
+	MONGO_CONNECTION_STRING = os.getenv("MONGO_CONNECTION_STRING")
+else:
+	MONGO_CONNECTION_STRING = f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/"
 
 client = AsyncMongoClient(MONGO_CONNECTION_STRING)
 
-db = client["position"]
+db = client[MONGO_DB]
 collection = db.get_collection("vehicle")
 
 PyObjectId = Annotated[str, BeforeValidator(str)]
@@ -92,15 +103,18 @@ async def get_all_vehicles():
 		async for document in cursor:
 			vehicles.append(document)
 		
-		if not vehicles:
-			raise HTTPException(status_code=404, detail="No vehicles found")
-			
+		# Return empty list if no vehicles found to avoid 404 on frontend
 		return vehicles
 	except Exception as e:
 		# Log the error for debugging
 		print(f"Error fetching vehicles: {e}")
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-			detail=f"An error occurred while fetching vehicle data: {e}"
+			detail=f"An error occurred while fetching vehicle data"
 		)
+
+# Mount the static files from the built frontend
+# In production, this will serve the React app
+if os.path.exists("frontend/dist"):
+	app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
  

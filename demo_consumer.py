@@ -16,7 +16,17 @@ current_data = {}
 
 routes = pd.read_csv(filepath_or_buffer="google_transit/routes.txt", sep=",")
 
-MONGO_CONNECTION_STRING = f"mongodb://{os.getenv("MONGO_USER")}:{os.getenv("MONGO_PASSWORD")}@localhost:27017/"
+# MongoDB configuration
+MONGO_USER = os.getenv("MONGO_USER", "root")
+MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "example")
+MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
+MONGO_PORT = os.getenv("MONGO_PORT", "27017")
+MONGO_DB = os.getenv("MONGO_DB", "position")
+
+if os.getenv("MONGO_CONNECTION_STRING"):
+	MONGO_CONNECTION_STRING = os.getenv("MONGO_CONNECTION_STRING")
+else:
+	MONGO_CONNECTION_STRING = f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/"
 
 route_id_to_name = {}
 
@@ -37,8 +47,9 @@ map_route_to_name()
 # 	print(current_data)
 
 def main():
+	KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 	kafka_config = {
-		'bootstrap.servers': 'localhost:9092',
+		'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS,
 		'group.id': 'position-consumers',
 		'auto.offset.reset': 'earliest'
 	}
@@ -47,7 +58,7 @@ def main():
 	consumer.subscribe(['position'])
  
 	client = MongoClient(MONGO_CONNECTION_STRING)
-	database = client["position"]
+	database = client[MONGO_DB]
 	collection = database["vehicle"]
  
 	# remove old records using TTL index

@@ -12,8 +12,10 @@ load_dotenv()
 realtime_url = f"https://gtfsapi.translink.ca/v3/gtfsrealtime?apikey={os.getenv("API_KEY")}"
 position_url = f"https://gtfsapi.translink.ca/v3/gtfsposition?apikey={os.getenv("API_KEY")}"
 
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+
 kafka_config = {
-	'bootstrap.servers': 'localhost:9092'
+	'bootstrap.servers': KAFKA_BOOTSTRAP_SERVERS
 }
 
 # This cache will store the binary data of the entity we've seen
