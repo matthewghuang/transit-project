@@ -45,7 +45,8 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
               </strong>
               <div style={{ color: "#666", fontSize: "0.9em" }}>
                 Vehicle ID: {pos.vehicle.vehicle.id}<br />
-                Last Update: {new Date(pos.timestamp * 1000).toLocaleTimeString()}
+                Last Update: {pos.vehicle.timestamp? new Date(Number(pos.vehicle.timestamp) * 1000).toLocaleString() : "N/A"
+}
               </div>
             </div>
           </Popup>
