@@ -1,4 +1,4 @@
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { LatLngTuple } from "leaflet";
 import { usePositions } from "../hooks/usePositions";
 import { CSSProperties } from "react";
@@ -21,7 +21,7 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
     <MapContainer
       center={position}
       zoom={13}
-      scrollWheelZoom={false}
+      scrollWheelZoom={true}
       className={className}
       style={style}
     >
@@ -31,20 +31,25 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
       />
 
       {filteredData?.map((pos) => (
-        <>
-          <Marker
-            key={pos._id}
-            position={[
-              pos.vehicle.position.latitude,
-              pos.vehicle.position.longitude,
-            ]}
-          >
-            <Popup key={pos._id}>
-              {pos.vehicle.trip.route_name}
-              Last Updated: {pos.timestamp}
-            </Popup>
-          </Marker>
-        </>
+        <Marker
+          key={pos._id}
+          position={[
+            pos.vehicle.position.latitude,
+            pos.vehicle.position.longitude,
+          ]}
+        >
+          <Popup>
+            <div style={{ padding: "4px" }}>
+              <strong style={{ fontSize: "1.1em", display: "block", marginBottom: "4px" }}>
+                Route: {pos.vehicle.trip.route_name}
+              </strong>
+              <div style={{ color: "#666", fontSize: "0.9em" }}>
+                Vehicle ID: {pos.vehicle.vehicle.id}<br />
+                Last Update: {new Date(pos.timestamp * 1000).toLocaleTimeString()}
+              </div>
+            </div>
+          </Popup>
+        </Marker>
       ))}
     </MapContainer>
   );

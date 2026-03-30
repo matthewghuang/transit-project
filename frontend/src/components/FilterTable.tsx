@@ -1,7 +1,6 @@
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useCallback } from "react";
 import { usePositions } from "../hooks/usePositions";
 import { useFilterStore } from "../stores/filterStore";
-import { useCallback } from "react";
 
 const FilterEntry: React.FC<{ routeName: string; checked: boolean }> = ({
   routeName,
@@ -9,28 +8,33 @@ const FilterEntry: React.FC<{ routeName: string; checked: boolean }> = ({
 }) => {
   const { addFilter, removeFilter } = useFilterStore();
 
-  const handleCheckbox = useCallback((event: ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      addFilter(routeName);
-    } else {
-      removeFilter(routeName);
-    }
-  }, []);
+  const handleCheckbox = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      if (event.target.checked) {
+        addFilter(routeName);
+      } else {
+        removeFilter(routeName);
+      }
+    },
+    [routeName, addFilter, removeFilter]
+  );
 
   return (
-    <li>
+    <li className="filter-item" onClick={() => (checked ? removeFilter(routeName) : addFilter(routeName))}>
       <input
         type="checkbox"
+        id={`filter-${routeName}`}
         name={routeName}
         checked={checked}
         onChange={handleCheckbox}
+        onClick={(e) => e.stopPropagation()}
       />
-      {routeName}
+      <label htmlFor={`filter-${routeName}`}>{routeName}</label>
     </li>
   );
 };
 
-export const FilterTable: React.FC<{}> = ({}) => {
+export const FilterTable: React.FC<{}> = () => {
   const { data } = usePositions();
   const { filters, addFilter, clearFilters } = useFilterStore();
 
@@ -40,25 +44,34 @@ export const FilterTable: React.FC<{}> = ({}) => {
   });
   filters.forEach((filter) => routeNames.add(filter));
 
+  const sortedRouteNames = Array.from(routeNames).sort();
+
   const handleSelectAll = useCallback(
-    () => routeNames.forEach((val) => addFilter(val)),
-    [routeNames, addFilter]
+    () => sortedRouteNames.forEach((val) => addFilter(val)),
+    [sortedRouteNames, addFilter]
   );
 
   return (
     <>
-      <button onClick={handleSelectAll}>Select All</button>
-      <button onClick={clearFilters}>Clear All</button>
-      <ul>
-        {Array.from(routeNames)
-          .sort()
-          .map((routeName) => (
-            <FilterEntry
-              key={routeName}
-              routeName={routeName}
-              checked={filters.includes(routeName)}
-            ></FilterEntry>
-          ))}
+      <div className="filter-header">
+        <h2 style={{ fontSize: "1rem", marginBottom: "0.75rem", fontWeight: 600 }}>Route Filters</h2>
+        <div className="filter-controls">
+          <button className="btn btn-primary" onClick={handleSelectAll}>
+            Select All
+          </button>
+          <button className="btn" onClick={clearFilters}>
+            Clear
+          </button>
+        </div>
+      </div>
+      <ul className="filter-list">
+        {sortedRouteNames.map((routeName) => (
+          <FilterEntry
+            key={routeName}
+            routeName={routeName}
+            checked={filters.includes(routeName)}
+          />
+        ))}
       </ul>
     </>
   );
