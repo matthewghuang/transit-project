@@ -102,19 +102,23 @@ async def get_all_vehicles():
 		cursor = collection.find({})
 		async for document in cursor:
 			vehicles.append(document)
+   
+		print('{vehicles=}')
 		
-		# Return empty list if no vehicles found to avoid 404 on frontend
+		if not vehicles:
+			raise HTTPException(status_code=404, detail="No vehicles found")
+			
 		return vehicles
 	except Exception as e:
 		# Log the error for debugging
 		print(f"Error fetching vehicles: {e}")
 		raise HTTPException(
 			status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-			detail=f"An error occurred while fetching vehicle data"
+			detail=f"An error occurred while fetching vehicle data: {e}"
 		)
 
 # Mount the static files from the built frontend
 # In production, this will serve the React app
-if os.path.exists("frontend/dist"):
-	app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
+#if os.path.exists("frontend/dist"):
+# 	app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
  
