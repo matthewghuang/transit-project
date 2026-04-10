@@ -43,9 +43,10 @@
   1. A FastAPI endpoint provides Kernel Density Estimation (KDE) data for a given stop and time window.
   2. The UI renders a smooth probability distribution curve showing arrival likelihoods.
   3. Users can see a "Typical Delay" summary statistic derived from the historical dataset.
-**Plans**: 2 plans
+**Plans**: 3 plans
 - [x] 03-01-PLAN.md — Implement backend API for delay distributions
 - [x] 03-02-PLAN.md — Implement frontend area chart visualization
+- [ ] 03-03-PLAN.md — Automate database initialization (Gap Closure)
 **UI hint**: yes
 
 ## Progress Table
