@@ -8,14 +8,14 @@ A real-time transit dashboard that visualizes the reliability of bus routes at s
 
 Empower commuters with probabilistic insights into bus reliability, allowing for better-informed travel decisions beyond simple real-time estimates.
 
-## Current Milestone: v1.2 Dynamic Confidence & Arrive-By Times
+## Current Milestone: v1.3 Multi-Bus Stop Carousel
 
-**Goal:** Allow users to dynamically set their reliability threshold and always recommend conservative arrive-by times.
+**Goal:** Support stops served by multiple routes with a mobile-first horizontal carousel of arrival cards.
 
 **Target features:**
-- Interactive slider to set confidence level (e.g. 50% to 99%)
-- Backend API update to calculate dynamic percentile windows
-- "Predicted Time" logic overhaul: ensure recommendations are always at or before the scheduled time (never later, ensuring commuters don't miss early buses)
+- Backend API update: `/api/stops/{id}/next_buses` returns one upcoming bus per unique route.
+- Horizontal Carousel UI: A swipeable row of "Time Triad" cards for mobile-first navigation.
+- Component Reuse: Each card retains the full Phase 7 reliability toolset (Chart + Slider).
 
 ## Requirements
 
@@ -27,12 +27,18 @@ Empower commuters with probabilistic insights into bus reliability, allowing for
 - ✓ Probabilistic API endpoint providing delay distributions — v1.0
 - ✓ Frontend visualization with Recharts area charts — v1.0
 - ✓ Stop-centric UI with arrival countdowns and markers — v1.0
+- ✓ Search-first UX with intersection and 5-digit ID support — v1.1
+- ✓ Real-time staleness (Ghost Bus) detection — v1.1
+- ✓ Trip cancellation logging and consumer detection — v1.1
+- ✓ Dynamic confidence intervals with backend API support — v1.2
+- ✓ Interactive Radix UI Slider with zero-latency visual feedback — v1.2
+- ✓ Dynamic chart shading and Arrive-By safety logic — v1.2
 
 ### Active
 
-- [ ] **CONF-01**: Interactive slider to set confidence level (e.g. 50% to 99%)
-- [ ] **CONF-02**: Backend API update to calculate dynamic percentile windows
-- [ ] **CONF-03**: "Predicted Time" logic overhaul: ensure recommendations are always at or before the scheduled time (never later)
+- [ ] **MULT-01**: Backend API update to return arrivals for all unique routes at a stop
+- [ ] **MULT-02**: Horizontal Carousel UI for navigating multiple bus arrival cards
+- [ ] **MULT-03**: Refactor TimeTriad to work within a carousel item context
 
 ### Out of Scope
 
@@ -62,4 +68,4 @@ The system now calculates delays by joining real-time `TripUpdate` messages with
 | Area Chart Visualization | Provides an intuitive visual representation of probability density for commuters. | ✓ Good |
 
 ---
-*Last updated: April 10, 2026 after milestone v1.2 initialization*
+*Last updated: April 10, 2026 after milestone v1.3 initialization*

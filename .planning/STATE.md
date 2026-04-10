@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: Dynamic Confidence & Arrive-By Times
-status: executing
-last_updated: "2026-04-10T20:21:32.431Z"
+milestone: v1.3
+milestone_name: Multi-Bus Stop Carousel
+status: planning
+last_updated: "2026-04-10T20:50:00.000Z"
 progress:
-  total_phases: 5
-  completed_phases: 3
-  total_plans: 11
-  completed_plans: 10
-  percent: 91
+  total_phases: 2
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State: Translink Delay Distribution Dashboard
@@ -17,19 +17,19 @@ progress:
 ## Project Reference
 
 **Core Value:** Empower commuters with probabilistic insights into bus reliability, allowing for better-informed travel decisions beyond simple real-time estimates.
-**Current Focus:** v1.2 Dynamic Confidence & Arrive-By Times
+**Current Focus:** v1.3 Multi-Bus Stop Carousel - PLANNING
 
 ## Current Position
 
-Phase: 6
+Phase: Not started (defining requirements)
 Plan: —
-**Status:** Ready to execute
-**Progress:** [█████████░] 91%
+**Status:** Defining requirements
+**Progress:** [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
-- **Requirement Coverage:** 5/5 (100%)
-- **Phases Defined:** 2 (Phases 6, 7)
+- **Requirement Coverage:** 3/3 (100%)
+- **Phases Defined:** 0
 - **Current Velocity:** N/A
 
 ## Accumulated Context
@@ -38,15 +38,16 @@ Plan: —
 
 - **TimescaleDB:** Selected for high-performance time-series storage and PDF estimation hyperfunctions.
 - **FastAPI:** Chosen for low-latency delivery of statistical calculations to the frontend.
-- **Granularity:** Set to 'coarse' per config.json, leading to consolidation into two phases for v1.2 (Backend + UI).
+- **Granularity:** Set to 'coarse' per config.json.
 - **Search-First UX:** Removed the map in favor of a high-intent search box for better mobile usability.
-- **Confidence Windows:** Implementing dynamic slider allowing users to set arrival certainty thresholds.
-- **Predicted Time:** Will always recommend a time at or before the schedule to avoid missed buses.
+- **Confidence Windows:** Interactive discrete slider (50-99%) with zero-latency visual shading.
+- **Arrive-By Safety:** Recommended arrival times are always capped at the scheduled time.
+- **Carousel Layout:** Multiple routes at a stop will be displayed as a swipeable horizontal row of cards.
 
 ## Session Continuity
 
-- **Last Action:** Created v1.2 Roadmap mapping requirements to Phase 6 and Phase 7.
-- **Next Step:** Run `/gsd-plan-phase 6` to generate executable plans for the backend updates.
+- **Last Action:** Shipped v1.2. Started v1.3 milestone for Multi-Bus support.
+- **Next Step:** Gather requirements and create roadmap.
 
 ### Quick Tasks Completed
 
