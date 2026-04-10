@@ -89,7 +89,7 @@
   2. Area under the delay chart highlights dynamically based on selected confidence.
   3. User can bookmark or share the URL and retain their selected confidence level.
 **Plans**: 1 plan
-- [ ] 06-01-PLAN.md — Update API for dynamic percentiles & safety caps
+- [ ] 07-01-PLAN.md — Implementation of Interactive Confidence UI (Slider + Chart)
 **UI hint**: yes
 
 ## Progress
