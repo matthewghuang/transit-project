@@ -3,7 +3,7 @@
 ## Phases
 
 - [ ] **Phase 1: Real-time Data Foundation** - Establish the core ingestion pipeline that calculates delays by joining real-time positions with static schedules.
-- [ ] **Phase 2: Historical Storage & Infrastructure** - Set up the optimized PostgreSQL/TimescaleDB storage for long-term delay observations.
+- [x] **Phase 2: Historical Storage & Infrastructure** - Set up the optimized PostgreSQL/TimescaleDB storage for long-term delay observations. (completed 2026-04-10)
 - [ ] **Phase 3: Probabilistic API & Visualization** - Implement the statistical analysis engine and the user-facing distribution dashboard.
 
 ## Phase Details
@@ -34,8 +34,8 @@
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01-PLAN.md — Set up TimescaleDB infrastructure and initialize SQL schema
-- [ ] 02-02-PLAN.md — Migrate consumer to SQL batching and update API to SQL backend
+- [x] 02-01-PLAN.md — Set up TimescaleDB infrastructure and initialize SQL schema
+- [x] 02-02-PLAN.md — Migrate consumer to SQL batching and update API to SQL backend
 
 **Goal**: Transform raw historical data into actionable probabilistic insights for commuters.
 **Depends on**: Phase 2
@@ -52,5 +52,5 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Real-time Data Foundation | 0/1 | Not started | - |
-| 2. Historical Storage & Infrastructure | 0/1 | Not started | - |
+| 2. Historical Storage & Infrastructure | 2/2 | Complete   | 2026-04-10 |
 | 3. Probabilistic API & Visualization | 0/1 | Not started | - |

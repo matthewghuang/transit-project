@@ -13,13 +13,13 @@ Empower commuters with probabilistic insights into bus reliability, allowing for
 ### Validated
 
 - ✓ Real-time GTFS-R ingestion via Kafka — existing `main.py`
-- ✓ Vehicle position storage in MongoDB — existing `demo_consumer.py`
+- ✓ Vehicle position storage in MongoDB — existing `demo_consumer.py` (Deprecated in Phase 2)
 - ✓ Basic React/Leaflet frontend — existing `frontend/`
+- ✓ TimescaleDB historical storage and batch ingestion (Phase 2)
+- ✓ SQL-backed real-time vehicle positions (Phase 2)
 
 ### Active
 
-- [ ] **Ingestion**: New Kafka consumer to calculate schedule deviation (delay) by joining GTFS-R with static `stop_times.txt`.
-- [ ] **Storage**: PostgreSQL database to store historical delay observations (stop_id, route_id, delay_seconds, timestamp).
 - [ ] **Analysis**: API endpoint to calculate probability density functions (PDF) for delays at a given stop/time.
 - [ ] **Visualization**: React component showing a distribution curve of expected delays for the selected stop.
 
@@ -46,4 +46,4 @@ The project leverages an existing Kafka-based pipeline. The `main.py` script act
 | Rolling Historical Window | Using historical data for specific time-of-day/day-of-week provides the most relevant "distribution" for users. | — Pending |
 
 ---
-*Last updated: April 09, 2026 after initialization*
+*Last updated: April 10, 2026 after Phase 02 completion*
