@@ -413,7 +413,12 @@ async def get_stops():
     summary="Get Delay Distribution for a Stop",
     description="Calculates delay distribution histogram and median for a 2-hour window around current time.",
 )
-async def get_delay_distribution(stop_id: str):
+async def get_delay_distribution(
+    stop_id: str,
+    confidence: float = Query(
+        95.0, description="Confidence percentile (50, 75, 90, 95, 99)"
+    ),
+):
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
 
@@ -422,10 +427,13 @@ async def get_delay_distribution(stop_id: str):
     if stop_id in stop_code_to_id:
         stop_id = stop_code_to_id[stop_id]
 
+    snapped_conf = snap_percentile(confidence)
+    # TimescaleDB approx_percentile uses 0-1 scale
+    target_p = snapped_conf / 100.0
+
     try:
         now = datetime.datetime.now(datetime.timezone.utc)
         # 2-hour window centered on current time (1 hour before, 1 hour after)
-        # Note: In a real system we might adjust this to be 'time of day' independent of date
         window_start = (now - datetime.timedelta(hours=1)).time()
         window_end = (now + datetime.timedelta(hours=1)).time()
 
@@ -433,9 +441,46 @@ async def get_delay_distribution(stop_id: str):
         day_type = "weekend" if is_weekend else "weekday"
 
         async with pool.acquire() as conn:
-            # We filter by time of day (ignoring the date part for historical patterns)
-            # and by weekday/weekend
-            query = """
+            # D-03: Use approximate aggregates for performance
+            # Calculate median, p05, and dynamic pN in one pass
+            stats_query = """
+                WITH data AS (
+                    SELECT delay_seconds 
+                    FROM delay_observations 
+                    WHERE stop_id = $1 
+                    AND observed_at::time >= $2 
+                    AND observed_at::time <= $3
+                    AND (
+                        ($4 = 'weekend' AND EXTRACT(DOW FROM observed_at) IN (0, 6))
+                        OR
+                        ($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
+                    )
+                )
+                SELECT 
+                    COUNT(*) as obs_count,
+                    approx_percentile(percentile_agg(delay_seconds), 0.5) as median,
+                    approx_percentile(percentile_agg(delay_seconds), 0.05) as p05,
+                    approx_percentile(percentile_agg(delay_seconds), $5) as pn
+                FROM data
+            """
+            stats = await conn.fetchrow(
+                stats_query, stop_id, window_start, window_end, day_type, target_p
+            )
+
+            obs_count = stats["obs_count"] if stats else 0
+            if obs_count == 0:
+                return DistributionResponse(
+                    stop_id=input_id, median=0.0, confidence=snapped_conf, buckets=[]
+                )
+
+            median_minutes = float((stats["median"] or 0) / 60.0)
+            p05_minutes = float((stats["p05"] or 0) / 60.0)
+            pn_minutes = float((stats["pn"] or 0) / 60.0)
+            low_confidence = obs_count < 10
+
+            # Histogram buckets (still using DB for raw data for now, but in-DB histogram is an option)
+            rows = await conn.fetch(
+                """
                 SELECT delay_seconds 
                 FROM delay_observations 
                 WHERE stop_id = $1 
@@ -446,37 +491,30 @@ async def get_delay_distribution(stop_id: str):
                     OR
                     ($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
                 )
-            """
-            rows = await conn.fetch(query, stop_id, window_start, window_end, day_type)
-
-            if not rows:
-                # Fallback to all data if window is empty, or return empty distribution
-                return DistributionResponse(stop_id=input_id, median=0.0, buckets=[])
+                """,
+                stop_id,
+                window_start,
+                window_end,
+                day_type,
+            )
 
             delays = np.array([row["delay_seconds"] for row in rows])
-
-            # Statistics in minutes
-            median_minutes = float(np.median(delays) / 60.0)
-            p05_minutes = float(np.percentile(delays, 5) / 60.0)
-            p95_minutes = float(np.percentile(delays, 95) / 60.0)
-
-            # Histogram buckets (1-minute intervals)
-            # Delays typically range from -5m to +20m
-            # We'll bucket everything between -10 and 30 minutes
             bins = np.arange(-10, 31, 1)
             counts, bin_edges = np.histogram(delays / 60.0, bins=bins)
 
             buckets = []
             for count, edge in zip(counts, bin_edges[:-1]):
-                if count > 0:  # Only return non-empty buckets to save bandwidth
+                if count > 0:
                     buckets.append(HistogramBucket(minute=int(edge), count=int(count)))
 
             return DistributionResponse(
                 stop_id=input_id,
                 median=median_minutes,
                 p05=p05_minutes,
-                p95=p95_minutes,
-                observation_count=len(delays),
+                p95=pn_minutes,  # We reuse p95 field for the requested percentile
+                confidence=snapped_conf,
+                low_confidence=low_confidence,
+                observation_count=obs_count,
                 buckets=buckets,
             )
 
