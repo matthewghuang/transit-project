@@ -92,6 +92,17 @@ async def init_db():
             );
         """)
 
+        # Create trip_delays table
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS trip_delays (
+                trip_id TEXT PRIMARY KEY,
+                route_id TEXT,
+                delay_seconds INTEGER,
+                last_stop_id TEXT,
+                updated_at TIMESTAMPTZ NOT NULL
+            );
+        """)
+
         # Create stops table
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS stops (
