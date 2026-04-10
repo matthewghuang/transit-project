@@ -44,7 +44,7 @@ Plan: 1 of 3
 
 ### Todo List
 
-- [ ] Initialize Phase 1 plan (`/gsd-plan-phase 1`)
+- [ ] Initialize Phase 4 plan (`/gsd-plan-phase 4`)
 - [ ] Verify Translink static GTFS bundle update frequency
 
 ## Session Continuity
