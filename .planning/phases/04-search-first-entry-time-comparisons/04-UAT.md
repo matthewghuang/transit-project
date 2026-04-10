@@ -52,7 +52,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Stop IDs are displayed correctly without truncation or prefix issues."
-  status: failed
+  status: resolved
   reason: "User reported: Westbound E Hastings St @ Renfrew St displays as #959. Other stops have valid 5 digit IDs"
   severity: major
   test: 1
@@ -67,7 +67,7 @@ skipped: 0
   debug_session: ".planning/debug/uat-gap-stop-id-truncated.md"
 
 - truth: "Time Triad is visually polished, centered, and subtitle removed."
-  status: failed
+  status: resolved
   reason: "User reported: it's not centered, prediction is still there"
   severity: minor
   test: 2
@@ -82,7 +82,7 @@ skipped: 0
   debug_session: ".planning/debug/uat-gap-ui-misalignment.md"
 
 - truth: "Expanded view shows all relevant times and the PDF chart."
-  status: failed
+  status: resolved
   reason: "User reported: yes but actual time is blank now"
   severity: major
   test: 3
