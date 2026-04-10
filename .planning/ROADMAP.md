@@ -109,7 +109,7 @@
   1. `/api/stops/{id}/next_buses` returns an array of unique route arrivals.
   2. The response includes scheduled, actual, and predicted times for each route.
 **Plans**: 1 plan
-- [ ] 08-01-PLAN.md — Refactor API for multi-route arrival support
+- [x] 08-01-PLAN.md — Refactor API for multi-route arrival support
 
 ### Phase 9: Swipeable Carousel UI
 **Goal**: Mobile-first navigation for multiple arrival cards
