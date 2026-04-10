@@ -45,8 +45,20 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
               </strong>
               <div style={{ color: "#666", fontSize: "0.9em" }}>
                 Vehicle ID: {pos.vehicle.vehicle.id}<br />
-                Last Update: {pos.vehicle.timestamp? new Date(Number(pos.vehicle.timestamp) * 1000).toLocaleString() : "N/A"
-}
+                {pos.vehicle.delay_seconds !== undefined && (
+                  <div style={{
+                    color: pos.vehicle.delay_seconds > 0 ? "#d32f2f" : pos.vehicle.delay_seconds < 0 ? "#2e7d32" : "#666",
+                    fontWeight: "bold",
+                    marginTop: "2px"
+                  }}>
+                    {pos.vehicle.delay_seconds > 0 
+                      ? `${Math.round(pos.vehicle.delay_seconds / 60)} minutes late` 
+                      : pos.vehicle.delay_seconds < 0 
+                        ? `${Math.round(Math.abs(pos.vehicle.delay_seconds) / 60)} minutes early` 
+                        : "On time"}
+                  </div>
+                )}
+                Last Update: {pos.vehicle.timestamp? new Date(Number(pos.vehicle.timestamp) * 1000).toLocaleString() : "N/A"}
               </div>
             </div>
           </Popup>
