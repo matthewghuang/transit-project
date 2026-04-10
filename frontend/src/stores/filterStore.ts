@@ -3,6 +3,7 @@ import { create } from "zustand";
 type FilterState = {
   filters: string[];
   selectedStopId: string | null;
+  confidenceLevel: number;
 };
 
 type FilterActions = {
@@ -11,6 +12,7 @@ type FilterActions = {
   clearFilters: () => void;
   setFilters: (newFilters: string[]) => void;
   setSelectedStopId: (id: string | null) => void;
+  setConfidenceLevel: (level: number) => void;
 };
 
 type FilterStore = FilterState & FilterActions;
@@ -19,6 +21,7 @@ export const useFilterStore = create<FilterStore>((set) => ({
   // Initial State
   filters: [],
   selectedStopId: null,
+  confidenceLevel: 95,
 
   // Actions
   addFilter: (filterToAdd) =>
@@ -48,5 +51,10 @@ export const useFilterStore = create<FilterStore>((set) => ({
   setSelectedStopId: (id) =>
     set(() => ({
       selectedStopId: id,
+    })),
+
+  setConfidenceLevel: (level) =>
+    set(() => ({
+      confidenceLevel: level,
     })),
 }));
