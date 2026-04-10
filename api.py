@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, Query, status
 from pydantic import ConfigDict, BaseModel
 import os
+import csv
 from dotenv import load_dotenv
-from typing import Optional, List
+from typing import Optional, List, Dict
 import datetime
 import asyncpg
 import numpy as np
@@ -21,10 +22,32 @@ POSTGRES_DB = os.getenv("POSTGRES_DB", "transit")
 
 pool = None
 
+# In-memory GTFS stops lookup: stop_id -> {name, lat, lon}
+stops_lookup: Dict[str, dict] = {}
+
+
+def load_stops():
+    """Load stop metadata from GTFS static stops.txt into memory."""
+    global stops_lookup
+    stops_path = os.getenv("GTFS_STOPS_PATH", "google_transit/stops.txt")
+    try:
+        with open(stops_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                stops_lookup[row["stop_id"].strip()] = {
+                    "name": row["stop_name"].strip(),
+                    "lat": float(row["stop_lat"]),
+                    "lon": float(row["stop_lon"]),
+                }
+        print(f"Loaded {len(stops_lookup)} stops from {stops_path}")
+    except Exception as e:
+        print(f"Warning: Could not load stops.txt: {e}")
+
 
 @app.on_event("startup")
 async def startup():
     global pool
+    load_stops()
     pool = await asyncpg.create_pool(
         user=POSTGRES_USER,
         password=POSTGRES_PASSWORD,
@@ -65,6 +88,15 @@ class VehicleUpdate(BaseModel):
     trip: Trip
     position: Position
     timestamp: datetime.datetime
+    model_config = BASE_MODEL_CONFIG
+
+
+class StopInfo(BaseModel):
+    id: str
+    name: str
+    latitude: float
+    longitude: float
+    observation_count: int
     model_config = BASE_MODEL_CONFIG
 
 
@@ -116,6 +148,52 @@ async def get_all_vehicles():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while fetching vehicle data: {e}",
+        )
+
+
+@app.get(
+    "/api/stops",
+    response_model=List[StopInfo],
+    summary="Get Stops With Delay Data",
+    description="Returns stops that have delay observations, enriched with GTFS metadata.",
+)
+async def get_stops(limit: int = Query(50, ge=1, le=500)):
+    if pool is None:
+        raise HTTPException(status_code=500, detail="Database pool not initialized")
+
+    try:
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                SELECT stop_id, COUNT(*) as cnt
+                FROM delay_observations
+                GROUP BY stop_id
+                ORDER BY cnt DESC
+                LIMIT $1
+                """,
+                limit,
+            )
+
+            stops = []
+            for row in rows:
+                sid = row["stop_id"]
+                meta = stops_lookup.get(sid)
+                if meta:
+                    stops.append(
+                        StopInfo(
+                            id=sid,
+                            name=meta["name"],
+                            latitude=meta["lat"],
+                            longitude=meta["lon"],
+                            observation_count=row["cnt"],
+                        )
+                    )
+            return stops
+    except Exception as e:
+        print(f"Error fetching stops: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while fetching stops: {e}",
         )
 
 

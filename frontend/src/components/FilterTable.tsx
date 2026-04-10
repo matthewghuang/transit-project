@@ -40,7 +40,7 @@ export const FilterTable: React.FC<{}> = () => {
 
   const routeNames = new Set<string>();
   data?.forEach((pde) => {
-    routeNames.add(pde.vehicle.trip.route_name);
+    routeNames.add(pde.trip.routeId);
   });
   filters.forEach((filter) => routeNames.add(filter));
 

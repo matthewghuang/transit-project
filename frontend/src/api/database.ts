@@ -5,41 +5,37 @@ export type VehiclePosition = {
   longitude: number;
 };
 
-export type VehicleInfo = {
-  id: string;
-  label: string;
-};
-
 export type VehicleTrip = {
-  routeId: string;
-  directionId: number;
-  route_name: string;
-  scheduleRelationship: string;
-  startDate: string;
   tripId: string;
+  routeId: string;
 };
 
-export type Vehicle = {
-  position: VehiclePosition;
-  currentStopSequence: number;
-  currentStatus: string;
-  timestamp: string;
-  stopId: string;
-  vehicle: VehicleInfo;
-  trip: VehicleTrip;
-  delay_seconds?: number;
-  next_stop_id?: string;
-};
-
-export type PositionDocumentEntry = {
+// Matches the flat VehicleUpdate shape returned by the TimescaleDB API
+export type VehicleUpdate = {
   id: string;
-  vehicle: Vehicle;
+  trip: VehicleTrip;
+  position: VehiclePosition;
   timestamp: string;
-  _id: string;
 };
 
-export const fetchPositions = async (): Promise<PositionDocumentEntry[]> => {
+export type StopInfo = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  observation_count: number;
+};
+
+export const fetchPositions = async (): Promise<VehicleUpdate[]> => {
   const response = await ky.get("api/vehicles");
+
+  if (!response.ok) throw new Error(`Request error: ${response.status}`);
+
+  return response.json();
+};
+
+export const fetchStops = async (): Promise<StopInfo[]> => {
+  const response = await ky.get("api/stops");
 
   if (!response.ok) throw new Error(`Request error: ${response.status}`);
 
