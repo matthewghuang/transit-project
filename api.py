@@ -24,6 +24,7 @@ pool = None
 
 # In-memory GTFS lookups
 stops_lookup: Dict[str, dict] = {}
+stop_code_to_id: Dict[str, str] = {}
 routes_lookup: Dict[str, str] = {}
 stop_times_lookup: Dict[str, list] = {}  # route_id -> route_short_name
 
@@ -60,17 +61,21 @@ def load_stop_times():
 
 def load_stops():
     """Load stop metadata from GTFS static stops.txt into memory."""
-    global stops_lookup
+    global stops_lookup, stop_code_to_id
     stops_path = os.getenv("GTFS_STOPS_PATH", "google_transit/stops.txt")
     try:
         with open(stops_path, "r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                stops_lookup[row["stop_id"].strip()] = {
+                sid = row["stop_id"].strip()
+                code = row.get("stop_code", "").strip()
+                stops_lookup[sid] = {
                     "name": row["stop_name"].strip(),
                     "lat": float(row["stop_lat"]),
                     "lon": float(row["stop_lon"]),
                 }
+                if code:
+                    stop_code_to_id[code] = sid
         print(f"Loaded {len(stops_lookup)} stops from {stops_path}")
     except Exception as e:
         print(f"Warning: Could not load stops.txt: {e}")
