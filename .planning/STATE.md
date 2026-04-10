@@ -49,5 +49,11 @@ Plan: 1 of 3
 
 ## Session Continuity
 
-- **Last Action:** Created ROADMAP.md and initialized STATE.md.
+- **Last Action:** Completed quick task 260409-uhf: When a user clicks a stop, it should show an additional 3 things: the scheduled time of the next bus, the actual time of the next bus (including delays), and a predicted time of the next bus based on historical delays
 - **Next Step:** User approval of the roadmap followed by Phase 1 planning.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 260409-uhf | When a user clicks a stop, it should show an additional 3 things: the scheduled time of the next bus, the actual time of the next bus (including delays), and a predicted time of the next bus based on historical delays | 2026-04-10 | b1963a8 | [260409-uhf-when-a-user-clicks-a-stop-it-should-show](./quick/260409-uhf-when-a-user-clicks-a-stop-it-should-show/) |
