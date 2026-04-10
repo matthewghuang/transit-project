@@ -76,6 +76,7 @@ class VehicleDetails(BaseModel):
     stopId: str
     vehicle: VehicleIdentity
     delay_seconds: Optional[int] = None
+    next_stop_id: Optional[str] = None
     model_config = BASE_MODEL_CONFIG
 
 
