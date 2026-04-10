@@ -68,6 +68,25 @@ services:
         reservations:
           memory: 256M
 
+  db-init:
+    build: .
+    container_name: db-init-transit
+    command: ["python", "db_init.py"]
+    depends_on:
+      - timescale
+    environment:
+      POSTGRES_HOST: timescale
+      POSTGRES_DB: transit
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    restart: on-failure
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+
   # Optional: You might want to disable mongo-express on a B1s to save RAM
   mongo-express:
     image: mongo-express
