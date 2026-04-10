@@ -19,8 +19,8 @@
 **Plans**: 4 plans
 - [x] 01-01-PLAN.md — Implement backend ingestion and delay calculation
 - [x] 01-02-PLAN.md — Update API and Frontend to visualize delays
-- [ ] 01-03-PLAN.md — Refine next-stop logic (Gap Closure)
-- [ ] 01-04-PLAN.md — Implement stop-selection and countdown UI (Gap Closure)
+- [x] 01-03-PLAN.md — Refine next-stop logic (Gap Closure)
+- [x] 01-04-PLAN.md — Implement stop-selection and countdown UI (Gap Closure)
 **UI hint**: yes
 
 ### Phase 2: Historical Storage & Infrastructure
