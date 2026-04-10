@@ -1,31 +1,31 @@
+import { useState } from "react";
 import "./App.css";
-import { Map } from "./components/Map";
-import { FilterTable } from "./components/FilterTable";
-import { usePositions } from "./hooks/usePositions";
+import { HeroSearch } from "./components/HeroSearch";
 
 export function App() {
-  const { isLoading } = usePositions();
-
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <p>Initializing Real-Time Data...</p>
-      </div>
-    );
-  }
+  const [selectedStopId, setSelectedStopId] = useState<string | null>(null);
 
   return (
     <div className="app-container">
       <header>
-        <h1>Transit Dashboard</h1>
+        <h1 onClick={() => setSelectedStopId(null)} style={{ cursor: 'pointer' }}>
+          Transit Dashboard
+        </h1>
       </header>
       <main>
-        <div className="map-container">
-          <Map style={{ height: "100%" }} />
-        </div>
-        <aside className="sidebar">
-          <FilterTable />
-        </aside>
+        {!selectedStopId ? (
+          <HeroSearch onSelectStop={setSelectedStopId} />
+        ) : (
+          <div className="dashboard-container">
+            <button className="btn" onClick={() => setSelectedStopId(null)} style={{ margin: '1rem' }}>
+              ← Back to Search
+            </button>
+            <div style={{ padding: '0 1rem' }}>
+              <h2>Stop Dashboard for {selectedStopId}</h2>
+              <p>Dashboard components coming in next plan...</p>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
