@@ -175,7 +175,7 @@ class DistributionResponse(BaseModel):
     "/api/stops/search",
     response_model=List[StopInfo],
     summary="Search for Stops",
-    description="Fuzzy search for stops by name or exact search by stop_id.",
+    description="Fuzzy search for stops by name, exact search by stop_id, or search by route name.",
 )
 async def search_stops(q: str = Query(..., min_length=1)):
     if pool is None:
@@ -186,12 +186,18 @@ async def search_stops(q: str = Query(..., min_length=1)):
             # Set similarity threshold for fuzzy search
             await conn.execute("SELECT set_limit(0.1);")
 
-            # Check if q is a 5-digit number (common stop_id format in some regions,
-            # though Translink uses 5 or 6 digits)
+            # Check if q is a 5-digit number (common stop_id format)
             is_numeric = q.isdigit() and (len(q) >= 4 and len(q) <= 6)
 
+            # Check if q matches any route_short_name
+            matching_route_ids = [
+                rid
+                for rid, rname in routes_lookup.items()
+                if q.lower() == rname.lower()
+            ]
+
             if is_numeric:
-                # Priority 1: Exact stop_id match
+                # Priority 1: Exact stop_id match (weight 1.0)
                 # Priority 2: Fuzzy name match
                 rows = await conn.fetch(
                     """
@@ -209,6 +215,25 @@ async def search_stops(q: str = Query(..., min_length=1)):
                     LIMIT 20
                     """,
                     q,
+                )
+            elif matching_route_ids:
+                # Search by route: find stops that have observations for this route
+                rows = await conn.fetch(
+                    """
+                    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, 
+                           COALESCE(obs.cnt, 0) as observation_count,
+                           COALESCE(obs.route_ids, '{}') as route_ids
+                    FROM stops s
+                    JOIN (
+                        SELECT stop_id, COUNT(*) as cnt, array_agg(DISTINCT route_id) as route_ids
+                        FROM delay_observations
+                        WHERE route_id = ANY($1)
+                        GROUP BY stop_id
+                    ) obs ON s.stop_id = obs.stop_id
+                    ORDER BY obs.cnt DESC
+                    LIMIT 20
+                    """,
+                    matching_route_ids,
                 )
             else:
                 # Fuzzy name match
@@ -471,7 +496,7 @@ async def get_next_buses(stop_id: str):
                 "SELECT delay_seconds FROM delay_observations WHERE trip_id = $1 ORDER BY observed_at DESC LIMIT 1",
                 trip_id,
             )
-            current_delay = row["delay_seconds"] if row else 0
+            current_delay = row["delay_seconds"] if row else None
 
             if current_delay is not None:
                 # Calculate actual time
@@ -511,10 +536,6 @@ async def get_next_buses(stop_id: str):
                 pm = (pred_sec % 3600) // 60
                 ps = pred_sec % 60
                 predicted_str = f"{ph:02d}:{pm:02d}:{ps:02d}"
-            else:
-                predicted_str = (
-                    actual_str if actual_str else sched_str
-                )  # fallback to actual or scheduled
 
     except Exception as e:
         print(f"Error calculating next buses: {e}")
