@@ -54,7 +54,7 @@ skipped: 0
 ## Gaps
 
 - truth: "Typing a bus route name into the search box shows stops that serve that route."
-  status: failed
+  status: resolved
   reason: "User reported: It works but when I search for a bus like \"R5\" it should show stops that have the R5."
   severity: major
   test: 1
@@ -67,7 +67,7 @@ skipped: 0
   debug_session: ".planning/debug/uat-gap-route-search.md"
 
 - truth: "Entering a 5-digit stop ID returns the correct stop."
-  status: failed
+  status: resolved
   reason: "User reported: 50959 should return \"Westbound E Hastings St @ Renfrew St\" but it does not"
   severity: major
   test: 2
@@ -80,7 +80,7 @@ skipped: 0
   debug_session: ".planning/debug/uat-gap-stop-id-search.md"
 
 - truth: "Hero Time is distinct from scheduled/actual and clearly labeled with valuable context."
-  status: failed
+  status: resolved
   reason: "User reported: I don't like the green circle with \"prediction\" that seems useless. The card with \"About this stop\" seems useless as well. And the scheduled time is the same as actual time (this is weird)"
   severity: major
   test: 3
@@ -99,7 +99,7 @@ skipped: 0
   debug_session: ".planning/debug/uat-gap-ui-clutter.md"
 
 - truth: "Expanded view shows Scheduled, Actual, Predicted times and historical PDF."
-  status: failed
+  status: resolved
   reason: "User reported: It does not show the PDF."
   severity: major
   test: 4
