@@ -394,6 +394,10 @@ async def get_delay_distribution(stop_id: str):
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
 
+    # Resolve stop_code to stop_id if necessary
+    if stop_id in stop_code_to_id:
+        stop_id = stop_code_to_id[stop_id]
+
     try:
         now = datetime.datetime.now(datetime.timezone.utc)
         # 2-hour window centered on current time (1 hour before, 1 hour after)
@@ -462,6 +466,10 @@ async def get_delay_distribution(stop_id: str):
 async def get_next_buses(stop_id: str):
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
+
+    # Resolve stop_code to stop_id if necessary
+    if stop_id in stop_code_to_id:
+        stop_id = stop_code_to_id[stop_id]
 
     # 1. Find next scheduled bus
     now = datetime.datetime.now()
