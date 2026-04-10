@@ -12,10 +12,12 @@ The 2025/2026 standard for high-frequency transit analytics leans heavily on **T
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| **TimescaleDB** | 2.17+ | Time-series Storage | Provides "Hyperfunctions" specifically for high-accuracy percentile and distribution (PDF) estimation at scale without full table scans. |
-| **PostgreSQL** | 17 | Relational Engine | Necessary for complex joins between real-time `stop_times` and static GTFS `stops.txt`. Version 17 brings significant performance improvements for B-tree indexes and vacuuming. |
-| **FastAPI** | 0.115+ | API Framework | High-performance async capabilities are critical for handling concurrent requests for distribution curves. Built-in Pydantic v2 ensures fast serialization of PDF data points. |
-| **Python** | 3.12+ | Processing Language | Optimal for the Kafka consumer logic. Use `3.12` for improved performance and the new `type` statement which aids in documenting complex data shapes. |
+| **TimescaleDB** | 2.17+ | Time-series Storage | Provides "Hyperfunctions" specifically for high-accuracy percentile and distribution (PDF) estimation at scale without full table scans. For the new dynamic percentile queries, use native `percentile_cont()` or `approx_percentile()`. |
+| **PostgreSQL** | 17 | Relational Engine | Necessary for complex joins between real-time `stop_times` and static GTFS `stops.txt`. |
+| **FastAPI** | 0.115+ | API Framework | High-performance async capabilities are critical for handling concurrent requests for distribution curves. |
+| **Python** | 3.12+ | Processing Language | Optimal for the Kafka consumer logic. |
+| **React** | 19.1+ | UI Framework | Recharts for area charts. |
+| **@radix-ui/react-slider** | ^1.1.2 | UI Component | Interactive slider for confidence selection. Accessible, customizable, integrates well without a full component library. |
 
 ### Supporting Libraries
 

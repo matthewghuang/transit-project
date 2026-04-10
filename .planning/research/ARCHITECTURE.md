@@ -1,34 +1,43 @@
-# Architecture Research: GTFS-R Delay Analysis
+# Architecture Research: Dynamic Confidence & Arrive-By Times
 
 **Domain:** Real-time Transit Analytics
-**Researched:** April 09, 2026
+**Researched:** April 10, 2026
 **Confidence:** HIGH
 
 ## Standard Architecture
 
 ### System Overview
 
+Focusing strictly on the v1.2 additions (Dynamic Confidence Slider & Dynamic Percentile API) interacting with the existing v1.0 pipeline:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Presentation Layer (React)                │
+│                      Frontend (React)                       │
 ├─────────────────────────────────────────────────────────────┤
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐        │
-│  │ Map View│  │ PDF Chart│  │Stop Info│  │ Reliability│        │
-│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘        │
-│       │            │            │            │              │
-├───────┴────────────┴────────────┴────────────┴──────────────┤
-│                    Application Layer (FastAPI)              │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐ │
+│  │ConfidenceSlider│  │  filterStore   │  │  usePositions  │ │
+│  │  (New UI Comp) │  │  (Zustand)     │  │  (Data Fetch)  │ │
+│  └───────┬────────┘  └───────┬────────┘  └───────┬────────┘ │
+│          │                   │                   │          │
+│          └──────(updates)────┘                   │          │
+│                              │                   │          │
+│                              └─────(triggers)────┘          │
+├───────────────────────────────────────┬─────────────────────┤
+│                                       │ ?confidence=0.85    │
+├───────────────────────────────────────▼─────────────────────┤
+│                      Backend (FastAPI)                      │
 ├─────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────────────────────────────────────┐    │
-│  │           Distribution & Statistics Engine          │    │
+│  │                    api.py Endpoint                  │    │
+│  │     (Dynamic Percentile & Safe Arrive-By Logic)     │    │
+│  └──────────────────────────┬──────────────────────────┘    │
+├─────────────────────────────┼───────────────────────────────┤
+│                             │ SQL: percentile_cont(val)     │
+├─────────────────────────────▼───────────────────────────────┤
+│                     Database (TimescaleDB)                  │
+│  ┌─────────────────────────────────────────────────────┐    │
+│  │                 Historical Delays Table             │    │
 │  └─────────────────────────────────────────────────────┘    │
-├─────────────────────────────────────────────────────────────┤
-│                    Data & Ingestion Layer                   │
-├─────────────────────────────────────────────────────────────┤
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
-│  │ Kafka    │  │ Enricher │  │ Postgres │  │ GTFS     │     │
-│  │ (Raw)    │  │ (Delay)  │  │ (Hist)   │  │ Static   │     │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -36,109 +45,141 @@
 
 | Component | Responsibility | Typical Implementation |
 |-----------|----------------|------------------------|
-| **GTFS Static Pre-processor** | Loads `stop_times.txt` and `trips.txt` into indexed relational tables. Optimizes for O(1) trip/stop lookup. | Python script using Pandas or SQL `COPY` command into Postgres. |
-| **Real-time Enricher** | Consumes raw Protobuf from Kafka, joins with static schedule to calculate `delay_seconds`, and emits "Delay Events". | Python (Confluent-Kafka) consumer using an in-memory or Redis cache of the current schedule. |
-| **Historical Store** | Stores millions of delay observations with time-series indexing. | PostgreSQL with **TimescaleDB** extension for hyper-indexing on `(timestamp, stop_id)`. |
-| **Aggregation API** | Queries historical distributions, calculates percentiles, and generates Probability Density Functions (PDF). | FastAPI with SciPy/NumPy for kernel density estimation (KDE). |
+| `ConfidenceSlider` | Capture user's desired reliability threshold (e.g., 50%-99%). | React component (HTML input `type="range"` or a library component). |
+| `filterStore` | Manage global state for the selected confidence level. | Zustand slice inside `frontend/src/stores/filterStore.ts`. |
+| `usePositions` (or new hook) | Fetch data from API with the new confidence parameter. | React Query / Fetch wrapper reacting to store changes. |
+| `api.py` Routes | Parse the `confidence` query parameter, orchestrate the DB query, and enforce the "never later than scheduled" rule. | FastAPI `@app.get` route with `Query` validation. |
+| TimescaleDB Query | Compute the exact percentile of historical delays dynamically. | PostgreSQL `percentile_cont()` aggregation function. |
 
 ## Recommended Project Structure
 
 ```
-src/
-├── ingestion/           # Kafka consumers and data enrichment
-│   ├── static/          # GTFS Static loaders
-│   └── realtime/        # Kafka -> Delay Enrichment -> Postgres
-├── api/                 # FastAPI application
-│   ├── routes/          # Endpoints for PDF data and stop stats
-│   └── analysis/        # Math/Stats for distribution curves
-├── shared/              # Shared models (Pydantic) and DB config
-└── frontend/            # React + Tailwind + Leaflet (Existing)
+frontend/src/
+├── components/
+│   ├── controls/
+│   │   └── ConfidenceSlider.tsx    # NEW: UI component for threshold selection
+│   └── map/
+│       └── ...                     # Existing UI components consuming the new predictions
+├── stores/
+│   └── filterStore.ts              # MODIFIED: Include `confidenceLevel` state
+└── hooks/
+    └── usePositions.ts             # MODIFIED: Pass `confidence` query param to API
+
+backend/
+└── api.py                          # MODIFIED: API endpoints and Pydantic schemas
 ```
 
 ### Structure Rationale
 
-- **ingestion/:** Separates the heavy "write" load from the "read" API. This allows scaling the Kafka consumer independently of the web server.
-- **api/analysis/:** Isolates the statistical logic (KDE, PDF calculation) from the HTTP boilerplate, making it easier to test the math without a running server.
+- **`frontend/src/components/controls/`:** Isolates the new interactive control from the complex map logic.
+- **`backend/api.py`:** Since the backend is lightweight, expanding the existing endpoints (rather than creating a new service) keeps the architecture cohesive.
 
 ## Architectural Patterns
 
-### Pattern 1: Schedule-in-Memory Cache
+### Pattern 1: Dynamic Percentile Pushdown
 
-**What:** Load the current day's `stop_times` into a hash map (dictionary) keyed by `(trip_id, stop_id)` for the Enricher.
-**When to use:** When processing high-frequency GTFS-R updates (every 30s) to avoid constant DB round-trips for the static "expected time".
-**Trade-offs:** High memory usage (~100MB for Translink) but extremely fast delay calculation.
+**What:** Pushing the percentile calculation down to the database layer rather than fetching all raw observations and calculating in memory.
+**When to use:** When the dataset is large (like historical transit delays) and moving data across the network is slow.
+**Trade-offs:** Increases database CPU load but significantly reduces memory usage and network latency for the backend service.
 
-### Pattern 2: Time-Bucket Aggregation
+**Example:**
+```sql
+SELECT 
+  route_id, 
+  percentile_cont($1) WITHIN GROUP (ORDER BY delay_seconds) as predicted_delay
+FROM historical_delays
+WHERE stop_id = $2
+GROUP BY route_id;
+```
 
-**What:** Group delay observations into 15-minute or 1-hour "buckets" for specific days of the week.
-**When to use:** When calculating historical reliability for a specific time-of-day.
-**Trade-offs:** Faster queries for users; however, buckets must be wide enough to have sufficient data points.
+### Pattern 2: Debounced State Synchronization
+
+**What:** The slider updates local component state immediately for smooth UI, but debounces updates to the global `filterStore` (which triggers API calls).
+**When to use:** For continuous input controls (sliders) that trigger expensive network/database operations.
+**Trade-offs:** Slight delay between user stopping the slider and data updating, but prevents API spam and DB overload.
 
 ## Data Flow
 
-### Delay Processing Flow
+### Request Flow (Confidence Change)
 
 ```
-[Translink API]
-    ↓ (Protobuf)
-[Kafka Producer] → [Kafka Topic: raw_gtfs]
+[User drags slider to 90%]
     ↓
-[Delay Enricher] ← [Static Schedule Cache]
-    ↓ (Calculated Delay)
-[Postgres (TimescaleDB)]
+[ConfidenceSlider] → (debounces 300ms) → [filterStore (Zustand)]
+    ↓
+[usePositions (Hook)] detects store change, triggers fetch: GET /api/vehicles/?confidence=0.9
+    ↓
+[FastAPI Route] validates input (0.5 <= conf <= 0.99)
+    ↓
+[TimescaleDB] executes query using `percentile_cont(0.9)`
+    ↓
+[FastAPI Route] shapes response, applies "predicted <= scheduled" constraint
+    ↓
+[Frontend] renders updated area chart and conservative arrive-by times
 ```
 
-### Request Flow
+### Key Data Flows
 
-```
-[User selects Stop]
-    ↓
-[API] → [Query Postgres for historical delays at Stop X]
-    ↓
-[Analysis Engine] → [Generate PDF/Distribution]
-    ↓
-[Frontend] → [Render Distribution Curve]
-```
+1. **Arrive-by Time Calculation Flow:** 
+   - The database computes the delay `D` at the given percentile. 
+   - The backend applies the logic: `predicted_arrival = scheduled_arrival + D`. 
+   - The backend MUST enforce the constraint `predicted_arrival <= scheduled_arrival` if `D < 0` (bus historically runs early), ensuring commuters never miss early buses. This value is then passed to the frontend.
 
 ## Scaling Considerations
 
 | Scale | Architecture Adjustments |
 |-------|--------------------------|
-| 0-1k users | Single Postgres instance + 1 Kafka consumer. |
-| 1k-100k users | Read replicas for Postgres; move PDF calculation to background workers or cache common stops. |
-| 100k+ users | Materialized views for distribution stats; distributed Kafka consumer group. |
+| Current | On-the-fly `percentile_cont()` is sufficient for current traffic and data volume. |
+| High read volume | Introduce materialized views (TimescaleDB Continuous Aggregates) for standard confidence intervals (e.g., 50%, 75%, 90%, 95%) and snap the UI slider to those specific discrete steps. |
 
 ### Scaling Priorities
 
-1. **First bottleneck:** Joining Real-time TripID with Static StopTimes. *Fix: Use an in-memory lookup table.*
-2. **Second bottleneck:** Aggregating 30+ days of historical data for a single stop query. *Fix: Use TimescaleDB continuous aggregates.*
+1. **First bottleneck:** TimescaleDB CPU utilization spiking due to `percentile_cont` over massive unaggregated historical rows. *Fix: Restrict the time window (e.g., "last 30 days") or implement continuous aggregates.*
+2. **Second bottleneck:** API thrashing from fast slider movements. *Fix: Stricter debouncing on the frontend, and potential request cancellation (AbortController) in the fetch hook.*
 
 ## Anti-Patterns
 
-### Anti-Pattern 1: Live Joins in API
-**What people do:** Query the static CSV files directly in the API for every request.
-**Why it's wrong:** Extremely slow; `stop_times.txt` is too large for repeated parsing.
-**Do this instead:** Pre-load the CSV into a relational database with indexes.
+### Anti-Pattern 1: In-Memory Percentile Calculation
 
-### Anti-Pattern 2: Storing Raw Protobuf as Blob
-**What people do:** Save the entire Protobuf message in the database.
-**Why it's wrong:** Makes historical analysis impossible without re-parsing everything.
-**Do this instead:** Extract only relevant fields (delay, stop_id, timestamp) into structured columns.
+**What people do:** Fetch all raw historical delay rows for a stop into the FastAPI memory and use standard libraries to calculate the percentile.
+**Why it's wrong:** As the historical dataset grows, moving thousands of rows across the network and loading them into Python memory for every single user request will crash the backend.
+**Do this instead:** Push the calculation down to TimescaleDB using `percentile_cont()`.
+
+### Anti-Pattern 2: Trusting Client-Side Constraints
+
+**What people do:** Calculating the "conservative arrive-by time" directly in the React frontend based on raw distribution data.
+**Why it's wrong:** Fragments business logic. Different clients (or future integrations) might calculate it differently, leading to missed buses.
+**Do this instead:** Enforce the "never later than scheduled" logic inside the FastAPI backend.
+
+## Integration Points
+
+### Internal Boundaries
+
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| Frontend ↔ Backend | REST API (GET) | Add `?confidence=0.85` query parameter to existing delay/position endpoints. Return schema updated to include the definitive `conservative_arrive_by` timestamp. |
+| Backend ↔ TimescaleDB | Async SQL | Ensure proper indexing on `(stop_id, route_id, time_of_day)` to support the on-the-fly `percentile_cont` calculations without full table scans. |
 
 ## Suggested Build Order
 
-1. **Static Foundation**: Build the loader for `google_transit/*.txt` into Postgres.
-2. **The Enricher**: Create the Kafka consumer that joins incoming positions with the static database to calculate delay.
-3. **Storage**: Verify TimescaleDB indexing on the `delay_observations` table.
-4. **Analysis API**: Build the endpoint that takes a `stop_id` and returns a histogram/PDF.
-5. **UI Integration**: Connect the React frontend to the new API.
+To minimize friction and ensure stable integration, build from the data layer up:
+
+1. **Backend & Database (`api.py`)**
+   - Add the `confidence` query parameter to the FastAPI endpoint (defaulting to e.g., 0.85).
+   - Update the TimescaleDB SQL queries to use `percentile_cont()` dynamically.
+   - Implement the "never later than scheduled" logic overhaul in the backend.
+2. **Frontend State (`filterStore.ts` & Hooks)**
+   - Add `confidenceLevel` to the Zustand store.
+   - Update the API fetching hooks to append the new query parameter.
+3. **Frontend UI (`ConfidenceSlider.tsx`)**
+   - Build the interactive slider component with debouncing.
+   - Update the UI to prominently display the conservative arrive-by time and reflect the chosen confidence interval on the visualization.
 
 ## Sources
 
-- [OneBusAway Architecture](https://www.onebusaway.org/docs/architecture/)
-- [TimescaleDB Transit Patterns](https://timescale.com/blog/how-to-store-and-query-transit-data/)
-- [GTFS Realtime Best Practices](https://gtfs.org/realtime/best-practices/)
+- `.planning/PROJECT.md` (Milestone v1.2 specifications)
+- PostgreSQL Documentation (`percentile_cont` aggregate function)
 
 ---
-*Architecture research for: Translink Delay Distribution Dashboard*
-*Researched: April 09, 2026*
+*Architecture research for: Dynamic Confidence & Arrive-By Times (v1.2)*
+*Researched: April 10, 2026*

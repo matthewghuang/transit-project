@@ -1,65 +1,59 @@
-# Feature Landscape
+# Feature Landscape: Dynamic Confidence & Percentiles
 
-**Domain:** Transit Reliability Dashboards
-**Researched:** April 09, 2026
+**Domain:** Probabilistic Transit Real-Time Dashboard (v1.2)
+**Researched:** April 10, 2026
 
 ## Table Stakes
 
-Features users expect in any modern transit reliability/tracking application. Missing these typically leads to high bounce rates as the core utility is compromised.
+Features users expect when given control over probability and confidence models.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| **Real-time "Minutes Away"** | Fundamental baseline for any transit app. Users need immediate tactical info. | Low | Already exists in `frontend/` but must be synchronized with distribution data. |
-| **Stop-Specific Search/Selection** | Reliability is hyper-local; a route may be reliable globally but fail at a specific bottleneck stop. | Low | Core requirement for stop-focused analysis. |
-| **Historical Average Delay** | Provides context to the "real-time" number (e.g., "Usually 5m late"). | Medium | Requires joining GTFS-R with static schedules and storing historical data. |
-| **Simple Latency Status** | Binary or trinary status (On-time, Delayed, Early) with color coding (Green/Yellow/Red). | Low | Basic UI pattern for quick cognitive processing. |
-| **Vehicle Location Map** | Visual confirmation of the data. Users trust the numbers more if they see the dot. | Medium | Uses Leaflet/Mapbox; already partially implemented in current codebase. |
+| **Discrete Confidence Slider UI** | Users need clear, understandable intervals (e.g., 50%, 75%, 90%, 95%, 99%) rather than arbitrary floating percentages. | Low | Snapping to specific steps improves UX and enables query caching on the backend. |
+| **Dynamic Percentile API Endpoint** | Backend must calculate delay windows on-the-fly based on the user's requested confidence level instead of using static P90 defaults. | Medium | Requires SQL percentile aggregations dynamically queried over existing TimescaleDB delay observations. |
+| **Conservative Arrive-By Caps** | Core safety mechanic: Arrive-by recommendations must *never* be later than the scheduled time, regardless of how late the bus usually is. | Low | Prevents commuters from missing early/on-time buses. Logic: `min(scheduled_time, predicted_time)`. |
 
 ## Differentiators
 
-Features that set this dashboard apart by moving from deterministic "minutes away" to probabilistic reliability.
+Features that set the UX apart by making complex statistical concepts intuitive.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| **Delay Probability Distribution (PDF)** | Shows the *likelihood* of arrival within windows, helping users manage risk (e.g., "90% chance it's here by 8:05"). | High | The core "Delay Distribution Dashboard" USP. Requires PDF calculation from histograms. |
-| **Time-of-Day/Day-of-Week Sensitivity** | Reliability varies wildly between Monday rush hour and Sunday morning. | Medium | Requires partitioning historical storage (Postgres) by temporal features. |
-| **"Worst Case" Buffer Recommendation** | Tells the user exactly how much "buffer time" they should leave to have a 95% chance of catching the bus. | Medium | Derived from the Cumulative Distribution Function (CDF). |
-| **Reliability Trend (Last 7 Days)** | Identifies if a stop is getting better or worse (e.g., due to new construction). | Medium | Requires longitudinal historical data. |
-| **"Ghost Bus" Indicator** | Reliability is zero if the bus disappears. Tracking telemetry freshness is critical for trust. | Low | Flags buses that haven't sent a GTFS-R update in >3 mins. |
+| **Dynamic Chart Highlighting** | When the user drags the slider, the area under the existing delay distribution curve highlights to visually represent the selected probability mass. | Medium | High visual impact. Requires coordinating React state (Zustand slider value) with Recharts areas. |
+| **Plain-English Risk Labels** | Translates percentages into actionable advice (e.g., 50% = "Living Dangerously", 80% = "Typical Commute", 99% = "Can't Miss This"). | Low | Reduces cognitive load for users who don't intuitively grasp statistical percentiles. |
+| **URL State Persistence** | If a user finds a confidence level they like (e.g., 95%), saving it in the URL allows bookmarking their specific risk tolerance. | Low | Excellent quality-of-life for daily commuters returning to the same view. |
 
 ## Anti-Features
 
-Features to explicitly NOT build to maintain focus on the "Reliability Distribution" core value.
+Features to explicitly NOT build to maintain safety and simplicity.
 
 | Anti-Feature | Why Avoid | What to Do Instead |
 |--------------|-----------|-------------------|
-| **Real-time Traffic Rerouting** | High complexity; Google Maps/Transit App already do this better. | Focus on *reliability at the selected stop*, not finding a new route. |
-| **Predictive ML (Deep Learning)** | Overkill for initial phase; high infra cost and data requirements. | Use high-resolution historical frequency distributions (empirical PDF). |
-| **User Social Reporting** | "Crowdsourced lateness" is noisy and often redundant when GTFS-R is available. | Rely on high-fidelity Translink GTFS-R data for objective ground truth. |
-| **Ticketing/Payment Integration** | Massive compliance (PCI) and partnership overhead. | Keep the tool as a pure informational/utility dashboard. |
+| **Continuous/Granular Sliders (e.g., 87.3%)** | Statistically meaningless for our data volume and confusing for UX. Prevents backend caching. | Use a discrete, stepped slider with meaningful intervals (50%, 75%, 90%, 95%, 99%). |
+| **Late Arrival Recommendations** | Predicting a bus is always late and telling a user to arrive *after* the scheduled time causes missed buses if traffic is unexpectedly clear. | Always cap the "Arrive-By" recommendation at the `scheduled_time`. |
 
 ## Feature Dependencies
 
 ```
-GTFS-R Ingestion + Schedule Matching → Historical Delay Database (Postgres)
-Historical Delay Database → Probabilistic Distribution (PDF/CDF)
-Probabilistic Distribution → "Worst Case" Buffer Recommendation
-Historical Delay Database → Reliability Trends (Longitudinal)
-Telemetry Check → "Ghost Bus" Indicator
+Dynamic Percentile API → Discrete Confidence Slider (Slider requires API support)
+Dynamic Percentile API → Conservative Arrive-By Caps (Depends on dynamic percentile values)
+Discrete Confidence Slider → Dynamic Chart Highlighting (Visual update driven by slider state)
+Existing TimescaleDB → Dynamic Percentile API (Requires existing delay observations)
+Existing Recharts Area → Dynamic Chart Highlighting (Builds on top of current viz)
 ```
 
 ## MVP Recommendation
 
-Prioritize the "Stop-Focused Reliability" core:
-1. **Schedule Join**: Calculating delay by comparing GTFS-R with `stop_times.txt`.
-2. **Historical Storage**: Moving observations into TimescaleDB/Postgres partitioned by stop and time window.
-3. **Distribution Curve (PDF) Visualization**: A React component showing the lateness histogram for the current/selected time window.
-4. **90% Confidence Arrival**: A simple text indicator: "To be safe, be here by [Time]."
+Prioritize the core mechanics of user-driven probability:
+1. **Dynamic Percentile API**: Backend logic to serve multiple confidence tiers.
+2. **Discrete Confidence Slider**: Frontend control to switch between those tiers.
+3. **Conservative Arrive-By Caps**: Crucial logic overhaul to prevent missed buses (cap at schedule).
 
-Defer: **Multi-stop benchmarking** and **Long-term Trends (>30 days)** to Phase 2 once data density is sufficient.
+Defer: 
+- **URL State Persistence**: Can be added later.
+- **Dynamic Chart Highlighting**: High visual value but not strictly necessary for the core logic. Save for polish if time permits.
 
 ## Sources
 
-- [Transit App - How late is your bus really?](https://blog.transitapp.com) (UI patterns for historical reliability)
-- [Google Maps Commuter Updates](https://blog.google) (Market expectations for delay info)
-- [Project Context (.planning/PROJECT.md)](../PROJECT.md) (Internal constraints and tech stack)
+- Project Context Constraints: "never later, ensuring commuters don't miss early buses"
+- Standard UX practices for statistical tools (discrete steps vs continuous sliders).
