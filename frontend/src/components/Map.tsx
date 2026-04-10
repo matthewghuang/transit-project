@@ -4,6 +4,7 @@ import { usePositions } from "../hooks/usePositions";
 import { useStops } from "../hooks/useStops";
 import { CSSProperties, useMemo, lazy, Suspense } from "react";
 import { useFilterStore } from "../stores/filterStore";
+import NextBusesDisplay from "./NextBusesDisplay";
 
 const DelayDistributionChart = lazy(() => import("./DelayDistributionChart"));
 
@@ -103,6 +104,8 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
                 <Suspense fallback={<div>Loading chart...</div>}>
                   <DelayDistributionChart stopId={stop.id} />
                 </Suspense>
+
+                <NextBusesDisplay stopId={stop.id} />
               </div>
             </div>
           </Popup>
