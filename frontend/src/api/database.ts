@@ -28,6 +28,7 @@ export type Vehicle = {
   vehicle: VehicleInfo;
   trip: VehicleTrip;
   delay_seconds?: number;
+  next_stop_id?: string;
 };
 
 export type PositionDocumentEntry = {

@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 type FilterState = {
   filters: string[];
+  selectedStopId: string | null;
 };
 
 type FilterActions = {
@@ -9,6 +10,7 @@ type FilterActions = {
   removeFilter: (filter: string) => void;
   clearFilters: () => void;
   setFilters: (newFilters: string[]) => void;
+  setSelectedStopId: (id: string | null) => void;
 };
 
 type FilterStore = FilterState & FilterActions;
@@ -16,6 +18,7 @@ type FilterStore = FilterState & FilterActions;
 export const useFilterStore = create<FilterStore>((set) => ({
   // Initial State
   filters: [],
+  selectedStopId: null,
 
   // Actions
   addFilter: (filterToAdd) =>
@@ -40,5 +43,10 @@ export const useFilterStore = create<FilterStore>((set) => ({
   setFilters: (newFilters) =>
     set(() => ({
       filters: newFilters,
+    })),
+
+  setSelectedStopId: (id) =>
+    set(() => ({
+      selectedStopId: id,
     })),
 }));
