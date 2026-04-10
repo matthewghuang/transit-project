@@ -77,7 +77,8 @@
   1. API accepts `confidence` parameter and returns dynamic percentile delay bounds.
   2. The recommended "arrive-by" time returned by the API is never later than the scheduled time.
   3. Database performance remains stable when querying dynamic percentiles (no long query blocks).
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 06-01-PLAN.md — Update API for dynamic percentiles & safety caps
 
 ### Phase 7: Interactive Confidence UI
 **Goal**: Commuters can dynamically adjust and visualize their preferred reliability threshold
@@ -87,7 +88,8 @@
   1. User can slide a control to discrete confidence intervals (50%, 75%, 90%, 95%, 99%).
   2. Area under the delay chart highlights dynamically based on selected confidence.
   3. User can bookmark or share the URL and retain their selected confidence level.
-**Plans**: TBD
+**Plans**: 1 plan
+- [ ] 06-01-PLAN.md — Update API for dynamic percentiles & safety caps
 **UI hint**: yes
 
 ## Progress
