@@ -1,8 +1,8 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "frontend bug: Uncaught TypeError: Cannot read properties of undefined (reading 'next_stop_id')"
 created: 2026-04-09T00:00:00Z
-updated: 2026-04-09T00:02:00Z
+updated: 2026-04-10T04:40:00Z
 ---
 
 ## Current Focus
@@ -10,7 +10,7 @@ updated: 2026-04-09T00:02:00Z
 hypothesis: CONFIRMED — Frontend types and property accesses assumed old MongoDB nested response shape but API returns flat TimescaleDB objects.
 test: Build succeeds, no remaining references to old data shape.
 expecting: Dashboard renders without TypeError crash.
-next_action: Awaiting human verification that the dashboard loads in the browser.
+next_action: RESOLVED — Human confirmed map loads. Additionally fixed MOCK_STOPS using fake IDs so distribution charts now render real data.
 
 ## Symptoms
 
