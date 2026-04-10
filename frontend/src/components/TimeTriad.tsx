@@ -29,7 +29,7 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
     heroStatus = 'Real-time';
   } else if (data.predicted_time) {
     heroTimeObj = { label: 'Predicted', time: data.predicted_time };
-    heroStatus = 'Prediction';
+    heroStatus = ''; // Prediction subtitle removed
   }
 
   return (
@@ -37,9 +37,11 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
       <div className="hero-time-section">
         <div className="hero-label">{heroTimeObj.label} Time</div>
         <div className="hero-display">{heroTimeObj.time}</div>
-        <div className="hero-status">
-          {heroStatus}
-        </div>
+        {heroStatus && (
+          <div className="hero-status">
+            {heroStatus}
+          </div>
+        )}
       </div>
 
       {isExpanded && (
