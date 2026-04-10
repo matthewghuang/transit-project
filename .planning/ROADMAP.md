@@ -46,7 +46,7 @@
 **Plans**: 3 plans
 - [x] 03-01-PLAN.md — Implement backend API for delay distributions
 - [x] 03-02-PLAN.md — Implement frontend area chart visualization
-- [ ] 03-03-PLAN.md — Automate database initialization (Gap Closure)
+- [x] 03-03-PLAN.md — Automate database initialization (Gap Closure)
 **UI hint**: yes
 
 ## Progress Table

@@ -17,7 +17,7 @@ Requirements for initial release focusing on the core ingestion pipeline and bas
 
 - [ ] **REL-01**: Ingestion consumer calculates schedule deviation by joining real-time position data with static `stop_times.txt`.
 - [x] **REL-02**: Historical delay observations are stored in PostgreSQL/TimescaleDB with stop, route, and time-of-day metadata.
-- [ ] **REL-03**: User can view a Probability Density Function (PDF) curve showing the likelihood of different delay durations for the selected stop/time.
+- [x] **REL-03**: User can view a Probability Density Function (PDF) curve showing the likelihood of different delay durations for the selected stop/time.
 - [ ] **REL-04**: User can view a "Typical Delay" summary statistic (e.g., "Usually arrives 2m late").
 
 ## v2 Requirements
@@ -48,7 +48,7 @@ Deferred to future release.
 | CORE-03 | Phase 1 | Pending |
 | REL-01 | Phase 1 | Pending |
 | REL-02 | Phase 2 | Complete |
-| REL-03 | Phase 3 | Pending |
+| REL-03 | Phase 3 | Complete |
 | REL-04 | Phase 3 | Pending |
 
 **Coverage:**
