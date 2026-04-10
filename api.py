@@ -484,16 +484,8 @@ async def get_next_buses(stop_id: str):
     try:
         async with pool.acquire() as conn:
             # 2. Get real-time delay for this trip
-            # active_vehicles contains the current delay if we calculate it, or we just get updated_at?
-            # Wait, delay is in delay_observations, or maybe not in active_vehicles.
-            # Actually, active_vehicles has updated_at, latitude, longitude.
-            # Wait, do we have real-time delay in active_vehicles?
-            # Looking at the code: "SELECT vehicle_id, route_id, trip_id, latitude, longitude, updated_at FROM active_vehicles"
-            # Maybe delay isn't stored there. But the prompt says "fetch its current real-time delay (from active_vehicles or realtime state)".
-            # Let's check delay_observations for the most recent delay for this trip.
-
             row = await conn.fetchrow(
-                "SELECT delay_seconds FROM delay_observations WHERE trip_id = $1 ORDER BY observed_at DESC LIMIT 1",
+                "SELECT delay_seconds FROM trip_delays WHERE trip_id = $1",
                 trip_id,
             )
             current_delay = row["delay_seconds"] if row else None
