@@ -1,5 +1,6 @@
 import React from 'react';
 import { TimeTriad } from './TimeTriad';
+import { useStops } from '../hooks/useStops';
 
 interface StopDashboardProps {
   stopId: string;
@@ -7,6 +8,10 @@ interface StopDashboardProps {
 }
 
 export const StopDashboard: React.FC<StopDashboardProps> = ({ stopId, onBack }) => {
+  const { data: stops } = useStops();
+  const stop = stops?.find(s => s.id === stopId);
+  const stopName = stop ? stop.name : `Stop #${stopId}`;
+
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
@@ -14,7 +19,7 @@ export const StopDashboard: React.FC<StopDashboardProps> = ({ stopId, onBack }) 
           ← Search
         </button>
         <div className="stop-title">
-          <h2>Stop #{stopId}</h2>
+          <h2>{stopName} {stop && <span className="stop-id-sub">(#{stopId})</span>}</h2>
         </div>
       </header>
 
