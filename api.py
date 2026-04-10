@@ -28,10 +28,10 @@ routes_lookup: Dict[str, str] = {}
 stop_times_lookup: Dict[str, list] = {}  # route_id -> route_short_name
 
 
-
 def time_str_to_seconds(time_str):
-    h, m, s = map(int, time_str.split(':'))
+    h, m, s = map(int, time_str.split(":"))
     return h * 3600 + m * 60 + s
+
 
 def load_stop_times():
     global stop_times_lookup
@@ -46,7 +46,9 @@ def load_stop_times():
                 arr_str = row["arrival_time"].strip()
                 try:
                     sec = time_str_to_seconds(arr_str)
-                    stop_times_lookup[sid].append((sec, arr_str, row["trip_id"].strip()))
+                    stop_times_lookup[sid].append(
+                        (sec, arr_str, row["trip_id"].strip())
+                    )
                 except:
                     pass
         for sid in stop_times_lookup:
@@ -54,6 +56,7 @@ def load_stop_times():
         print(f"Loaded stop_times for {len(stop_times_lookup)} stops")
     except Exception as e:
         print(f"Warning: Could not load stop_times.txt: {e}")
+
 
 def load_stops():
     """Load stop metadata from GTFS static stops.txt into memory."""
@@ -92,6 +95,7 @@ async def startup():
     global pool
     load_stops()
     load_routes()
+    load_stop_times()
     pool = await asyncpg.create_pool(
         user=POSTGRES_USER,
         password=POSTGRES_PASSWORD,
@@ -134,7 +138,6 @@ class VehicleUpdate(BaseModel):
     position: Position
     timestamp: datetime.datetime
     model_config = BASE_MODEL_CONFIG
-
 
 
 class NextBusesResponse(BaseModel):
@@ -332,7 +335,6 @@ async def get_delay_distribution(stop_id: str):
         )
 
 
-
 @app.get(
     "/api/stops/{stop_id}/next_buses",
     response_model=NextBusesResponse,
@@ -342,47 +344,47 @@ async def get_delay_distribution(stop_id: str):
 async def get_next_buses(stop_id: str):
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
-    
+
     # 1. Find next scheduled bus
     now = datetime.datetime.now()
     now_sec = now.hour * 3600 + now.minute * 60 + now.second
-    
+
     # If it's past midnight but before 3AM, consider it part of the previous day's >24h schedule
     if now.hour < 3:
         now_sec += 24 * 3600
-        
+
     next_bus = None
     if stop_id in stop_times_lookup:
         for arr_sec, arr_str, trip_id in stop_times_lookup[stop_id]:
             if arr_sec >= now_sec:
                 next_bus = (arr_sec, arr_str, trip_id)
                 break
-                
+
     if not next_bus:
         return NextBusesResponse(stop_id=stop_id)
-        
+
     sched_sec, sched_str, trip_id = next_bus
-    
+
     actual_str = None
     predicted_str = None
-    
+
     try:
         async with pool.acquire() as conn:
             # 2. Get real-time delay for this trip
             # active_vehicles contains the current delay if we calculate it, or we just get updated_at?
-            # Wait, delay is in delay_observations, or maybe not in active_vehicles. 
-            # Actually, active_vehicles has updated_at, latitude, longitude. 
+            # Wait, delay is in delay_observations, or maybe not in active_vehicles.
+            # Actually, active_vehicles has updated_at, latitude, longitude.
             # Wait, do we have real-time delay in active_vehicles?
             # Looking at the code: "SELECT vehicle_id, route_id, trip_id, latitude, longitude, updated_at FROM active_vehicles"
             # Maybe delay isn't stored there. But the prompt says "fetch its current real-time delay (from active_vehicles or realtime state)".
             # Let's check delay_observations for the most recent delay for this trip.
-            
+
             row = await conn.fetchrow(
                 "SELECT delay_seconds FROM delay_observations WHERE trip_id = $1 ORDER BY observed_at DESC LIMIT 1",
-                trip_id
+                trip_id,
             )
             current_delay = row["delay_seconds"] if row else 0
-            
+
             if current_delay is not None:
                 # Calculate actual time
                 actual_sec = sched_sec + current_delay
@@ -390,14 +392,14 @@ async def get_next_buses(stop_id: str):
                 m = (actual_sec % 3600) // 60
                 s = actual_sec % 60
                 actual_str = f"{h:02d}:{m:02d}:{s:02d}"
-                
+
             # 3. Calculate predicted time based on historical median
             now_utc = datetime.datetime.now(datetime.timezone.utc)
             window_start = (now_utc - datetime.timedelta(hours=1)).time()
             window_end = (now_utc + datetime.timedelta(hours=1)).time()
             is_weekend = now_utc.weekday() >= 5
             day_type = "weekend" if is_weekend else "weekday"
-            
+
             query = """
                 SELECT delay_seconds 
                 FROM delay_observations 
@@ -410,7 +412,9 @@ async def get_next_buses(stop_id: str):
                     ($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
                 )
             """
-            hist_rows = await conn.fetch(query, stop_id, window_start, window_end, day_type)
+            hist_rows = await conn.fetch(
+                query, stop_id, window_start, window_end, day_type
+            )
             if hist_rows:
                 delays = [r["delay_seconds"] for r in hist_rows]
                 median_delay = int(np.median(delays))
@@ -420,20 +424,22 @@ async def get_next_buses(stop_id: str):
                 ps = pred_sec % 60
                 predicted_str = f"{ph:02d}:{pm:02d}:{ps:02d}"
             else:
-                predicted_str = actual_str if actual_str else sched_str # fallback to actual or scheduled
-                
+                predicted_str = (
+                    actual_str if actual_str else sched_str
+                )  # fallback to actual or scheduled
+
     except Exception as e:
         print(f"Error calculating next buses: {e}")
-        
+
     # Format scheduled_time cleanly
     sh = (sched_sec // 3600) % 24
     sm = (sched_sec % 3600) // 60
     ss = sched_sec % 60
     clean_sched_str = f"{sh:02d}:{sm:02d}:{ss:02d}"
-        
+
     return NextBusesResponse(
         stop_id=stop_id,
         scheduled_time=clean_sched_str,
         actual_time=actual_str,
-        predicted_time=predicted_str
+        predicted_time=predicted_str,
     )
