@@ -39,6 +39,7 @@
 - [x] 04-04-PLAN.md — UAT Gap Closure (Search & UI)
 - [x] 04-05-PLAN.md — Phase 4 Polish & Gap Closure
 - [x] 04-06-PLAN.md — UAT Final Fixes (Centering & Data)
+- [ ] 04-07-PLAN.md — Gap Closure: Actual Time Missing Fix
 **UI hint**: yes
 
 ### Phase 5: Advanced Reliability Insights
