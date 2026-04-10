@@ -191,10 +191,146 @@ main {
   color: var(--primary-color);
 }
 
-.dashboard-container {
-  max-width: 1200px;
+/* Dashboard & Triad Styles */
+.dashboard-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  background: white;
+  border-bottom: 1px solid var(--border-color);
+  gap: 1.5rem;
+}
+
+.back-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: white;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.back-btn:hover {
+  background: var(--bg-color);
+}
+
+.dashboard-main {
+  padding: 2rem;
+  max-width: 800px;
   margin: 0 auto;
-  width: 100%;
+}
+
+.triad-section h3 {
+  font-size: 1.25rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-muted);
+}
+
+.time-triad {
+  background: white;
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: var(--shadow);
+}
+
+.time-triad:hover {
+  border-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+.hero-time-section {
+  text-align: center;
+}
+
+.hero-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.hero-display {
+  font-size: 4rem;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1;
+  margin-bottom: 1rem;
+}
+
+.hero-status {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2e7d32;
+}
+
+.triad-details {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.triad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.triad-col {
+  text-align: center;
+}
+
+.col-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.col-time {
+  font-weight: 700;
+  font-size: 1.125rem;
+}
+
+.expand-hint, .triad-hint {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  margin-top: 1rem;
+}
+
+.info-section {
+  margin-top: 3rem;
+}
+
+.info-card {
+  padding: 1.5rem;
+  background: #eff6ff;
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+}
+
+.info-card h4 {
+  color: #1e40af;
+  margin-bottom: 0.5rem;
+}
+
+.info-card p {
+  color: #374151;
+  font-size: 0.875rem;
+}
+
+.triad-loading, .triad-error, .triad-empty {
+  padding: 3rem;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
 }
 
 .filter-header {
