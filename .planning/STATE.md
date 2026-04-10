@@ -1,15 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: Shipped
-last_updated: "2026-04-10T19:33:54.982Z"
+milestone: v1.2
+milestone_name: Dynamic Confidence & Arrive-By Times
+status: planning
+last_updated: "2026-04-10T20:45:00.000Z"
 progress:
-  total_phases: 3
-  completed_phases: 1
-  total_plans: 9
-  completed_plans: 8
-  percent: 89
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State: Translink Delay Distribution Dashboard
@@ -17,19 +17,19 @@ progress:
 ## Project Reference
 
 **Core Value:** Empower commuters with probabilistic insights into bus reliability, allowing for better-informed travel decisions beyond simple real-time estimates.
-**Current Focus:** v1.1 Advanced Reliability - SHIPPED
+**Current Focus:** v1.2 Dynamic Confidence & Arrive-By Times - PLANNING
 
 ## Current Position
 
-Phase: 05
-Plan: 05-01
-**Status:** Shipped
-**Progress:** [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+**Status:** Defining requirements
+**Progress:** [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
-- **Requirement Coverage:** 14/14 (100%)
-- **Phases Defined:** 5
+- **Requirement Coverage:** 3/3 (100%)
+- **Phases Defined:** 0
 - **Current Velocity:** N/A
 
 ## Accumulated Context
@@ -38,14 +38,15 @@ Plan: 05-01
 
 - **TimescaleDB:** Selected for high-performance time-series storage and PDF estimation hyperfunctions.
 - **FastAPI:** Chosen for low-latency delivery of statistical calculations to the frontend.
-- **Granularity:** Set to 'coarse' per config.json, resulting in 5 delivery phases.
+- **Granularity:** Set to 'coarse' per config.json.
 - **Search-First UX:** Removed the map in favor of a high-intent search box for better mobile usability.
-- **Confidence Windows:** Implemented 95% arrival certainty windows for reliability.
+- **Confidence Windows:** Implementing dynamic slider allowing users to set arrival certainty thresholds.
+- **Predicted Time:** Will always recommend a time at or before the schedule to avoid missed buses.
 
 ## Session Continuity
 
-- **Last Action:** Shipped Phase 5 and fixed persistent stop_code display bug.
-- **Next Step:** Maintain and monitor.
+- **Last Action:** Shipped v1.1 Advanced Reliability. Started v1.2 milestone.
+- **Next Step:** Gather requirements and create roadmap.
 
 ### Quick Tasks Completed
 

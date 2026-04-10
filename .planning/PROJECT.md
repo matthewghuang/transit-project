@@ -8,6 +8,15 @@ A real-time transit dashboard that visualizes the reliability of bus routes at s
 
 Empower commuters with probabilistic insights into bus reliability, allowing for better-informed travel decisions beyond simple real-time estimates.
 
+## Current Milestone: v1.2 Dynamic Confidence & Arrive-By Times
+
+**Goal:** Allow users to dynamically set their reliability threshold and always recommend conservative arrive-by times.
+
+**Target features:**
+- Interactive slider to set confidence level (e.g. 50% to 99%)
+- Backend API update to calculate dynamic percentile windows
+- "Predicted Time" logic overhaul: ensure recommendations are always at or before the scheduled time (never later, ensuring commuters don't miss early buses)
+
 ## Requirements
 
 ### Validated
@@ -21,10 +30,9 @@ Empower commuters with probabilistic insights into bus reliability, allowing for
 
 ### Active
 
-- [ ] **ADV-01**: Confidence-based arrival window recommendations (e.g., "Arrive by X for 95% certainty").
-- [ ] **ADV-02**: "Ghost Bus" detection and UI indicators for stale vehicle updates.
-- [ ] **ADV-03**: Trip cancellation historical logging and impact analysis.
-- [ ] **REL-04**: Enhanced "Typical Delay" summary statistics (e.g., "Usually arrives 2m late").
+- [ ] **CONF-01**: Interactive slider to set confidence level (e.g. 50% to 99%)
+- [ ] **CONF-02**: Backend API update to calculate dynamic percentile windows
+- [ ] **CONF-03**: "Predicted Time" logic overhaul: ensure recommendations are always at or before the scheduled time (never later)
 
 ### Out of Scope
 
@@ -54,4 +62,4 @@ The system now calculates delays by joining real-time `TripUpdate` messages with
 | Area Chart Visualization | Provides an intuitive visual representation of probability density for commuters. | ✓ Good |
 
 ---
-*Last updated: April 10, 2026 after v1.0 Foundation & Probabilistic Insights milestone completion*
+*Last updated: April 10, 2026 after milestone v1.2 initialization*
