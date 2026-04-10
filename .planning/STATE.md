@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dynamic Confidence & Arrive-By Times
 status: executing
-last_updated: "2026-04-10T20:14:51.024Z"
+last_updated: "2026-04-10T20:21:32.431Z"
 progress:
   total_phases: 5
   completed_phases: 3
@@ -59,3 +59,4 @@ Plan: —
 | 260410-hef | when clicking a stop it should also show the stop name on the header. | 2026-04-10 | ecb875c | [.planning/quick/260410-hef-when-clicking-a-stop-it-should-also-show/](./quick/260410-hef-when-clicking-a-stop-it-should-also-show/) |
 | Phase 06 P01 | 25m | 3 tasks | 1 files |
 | Phase 07 P01 | 66 | 3 tasks | 3 files |
+| 260410-ihs | add a feature to remove a recent stop | 2026-04-10 | 90b5e9b | [.planning/quick/260410-ihs-add-a-feature-to-remove-a-recent-stop/](./quick/260410-ihs-add-a-feature-to-remove-a-recent-stop/) |
