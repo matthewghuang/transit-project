@@ -15,8 +15,8 @@ Active requirements for the current milestone.
 
 ### Core Logic
 
-- [ ] **CORE-04**: Backend API calculates dynamic percentile windows based on requested confidence
-- [ ] **CORE-05**: "Predicted Time" logic overhaul ensures arrive-by recommendations are always at or before the scheduled time
+- [x] **CORE-04**: Backend API calculates dynamic percentile windows based on requested confidence
+- [x] **CORE-05**: "Predicted Time" logic overhaul ensures arrive-by recommendations are always at or before the scheduled time
 
 ## Previous Requirements (Shipped)
 
@@ -82,8 +82,8 @@ Explicitly excluded. Documented to prevent scope creep.
 | CONF-01 | Phase 7 | Pending |
 | CONF-02 | Phase 7 | Pending |
 | CONF-03 | Phase 7 | Pending |
-| CORE-04 | Phase 6 | Pending |
-| CORE-05 | Phase 6 | Pending |
+| CORE-04 | Phase 6 | Complete |
+| CORE-05 | Phase 6 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 5 total

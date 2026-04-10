@@ -78,7 +78,7 @@
   2. The recommended "arrive-by" time returned by the API is never later than the scheduled time.
   3. Database performance remains stable when querying dynamic percentiles (no long query blocks).
 **Plans**: 1 plan
-- [ ] 06-01-PLAN.md — Update API for dynamic percentiles & safety caps
+- [x] 06-01-PLAN.md — Update API for dynamic percentiles & safety caps
 
 ### Phase 7: Interactive Confidence UI
 **Goal**: Commuters can dynamically adjust and visualize their preferred reliability threshold
@@ -101,7 +101,7 @@
 | 3. Probabilistic API & Visualization | v1.0 | 3/3 | Complete | 2026-04-10 |
 | 4. Search-First Entry & Time Comparisons | v1.1 | 10/10 | Complete | 2026-04-10 |
 | 5. Advanced Reliability Insights | v1.1 | 1/1 | Complete | 2026-04-10 |
-| 6. Dynamic Percentile Backend | v1.2 | 0/0 | Not started | - |
+| 6. Dynamic Percentile Backend | v1.2 | 1/1 | Complete   | 2026-04-10 |
 | 7. Interactive Confidence UI | v1.2 | 0/0 | Not started | - |
 
 ---
