@@ -44,8 +44,8 @@
   2. The UI renders a smooth probability distribution curve showing arrival likelihoods.
   3. Users can see a "Typical Delay" summary statistic derived from the historical dataset.
 **Plans**: 2 plans
-- [ ] 03-01-PLAN.md — Implement backend API for delay distributions
-- [ ] 03-02-PLAN.md — Implement frontend area chart visualization
+- [x] 03-01-PLAN.md — Implement backend API for delay distributions
+- [x] 03-02-PLAN.md — Implement frontend area chart visualization
 **UI hint**: yes
 
 ## Progress Table
