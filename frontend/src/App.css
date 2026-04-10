@@ -236,6 +236,27 @@ main {
   gap: 1.5rem;
 }
 
+.stop-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.stop-title h2 {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stop-id-sub {
+  font-weight: 400;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  margin-left: 0.5rem;
+}
+
 .back-btn {
   padding: 0.5rem 1rem;
   border: 1px solid var(--border-color);
@@ -605,4 +626,78 @@ main {
   font-size: 1.5rem;
   font-weight: 800;
   color: var(--primary-color);
+}
+
+/* Global Confidence Slider */
+.global-confidence-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.global-confidence-slider .slider-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.global-confidence-slider .slider-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #666;
+}
+
+.global-confidence-slider .slider-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #2c3e50;
+}
+
+/* Embla Carousel Arrows */
+.embla__button {
+  -webkit-appearance: none;
+  background-color: transparent;
+  touch-action: manipulation;
+  display: inline-flex;
+  text-decoration: none;
+  cursor: pointer;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  width: 40px;
+  height: 40px;
+  z-index: 1;
+  border-radius: 50%;
+  color: #2c3e50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  border: 1px solid var(--border-color);
+}
+
+.embla__button:disabled {
+  opacity: 0.3;
+}
+
+.embla__buttons {
+  display: flex;
+  gap: 8px;
+  position: absolute;
+  right: 16px;
+  top: -48px;
+}
+
+@media (max-width: 768px) {
+  .embla__buttons {
+    display: none;
+  }
 }
