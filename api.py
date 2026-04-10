@@ -27,7 +27,8 @@ stops_lookup: Dict[str, dict] = {}
 stop_code_to_id: Dict[str, str] = {}
 id_to_stop_code: Dict[str, str] = {}
 routes_lookup: Dict[str, str] = {}
-stop_times_lookup: Dict[str, list] = {}  # route_id -> route_short_name
+trip_to_route: Dict[str, str] = {}
+stop_times_lookup: Dict[str, list] = {}
 
 
 def time_str_to_seconds(time_str):
@@ -36,8 +37,20 @@ def time_str_to_seconds(time_str):
 
 
 def load_stop_times():
-    global stop_times_lookup
+    global stop_times_lookup, trip_to_route
     stop_times_path = os.getenv("GTFS_STOP_TIMES_PATH", "google_transit/stop_times.txt")
+    trips_path = os.getenv("GTFS_TRIPS_PATH", "google_transit/trips.txt")
+
+    # Build trip to route mapping first
+    try:
+        with open(trips_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                trip_to_route[row["trip_id"].strip()] = row["route_id"].strip()
+        print(f"Loaded {len(trip_to_route)} trip to route mappings")
+    except Exception as e:
+        print(f"Warning: Could not load trips.txt: {e}")
+
     try:
         with open(stop_times_path, "r", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
@@ -48,9 +61,9 @@ def load_stop_times():
                 arr_str = row["arrival_time"].strip()
                 try:
                     sec = time_str_to_seconds(arr_str)
-                    stop_times_lookup[sid].append(
-                        (sec, arr_str, row["trip_id"].strip())
-                    )
+                    tid = row["trip_id"].strip()
+                    rid = trip_to_route.get(tid)
+                    stop_times_lookup[sid].append((sec, arr_str, tid, rid))
                 except:
                     pass
         for sid in stop_times_lookup:
@@ -149,6 +162,8 @@ class VehicleUpdate(BaseModel):
 
 class NextBusesResponse(BaseModel):
     stop_id: str
+    route_id: Optional[str] = None
+    route_name: Optional[str] = None
     scheduled_time: Optional[str] = None
     actual_time: Optional[str] = None
     predicted_time: Optional[str] = None
