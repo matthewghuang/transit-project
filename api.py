@@ -441,8 +441,8 @@ async def get_delay_distribution(
         day_type = "weekend" if is_weekend else "weekday"
 
         async with pool.acquire() as conn:
-            # D-03: Use approximate aggregates for performance
-            # Calculate median, p05, and dynamic pN in one pass
+            # D-03: Use approximate aggregates if available, otherwise exact sorting
+            # We use PERCENTILE_CONT (exact) since percentile_agg is missing in the environment
             stats_query = """
                 WITH data AS (
                     SELECT delay_seconds 
@@ -458,9 +458,9 @@ async def get_delay_distribution(
                 )
                 SELECT 
                     COUNT(*) as obs_count,
-                    approx_percentile(percentile_agg(delay_seconds), 0.5) as median,
-                    approx_percentile(percentile_agg(delay_seconds), 0.05) as p05,
-                    approx_percentile(percentile_agg(delay_seconds), $5) as pn
+                    percentile_cont(0.5) WITHIN GROUP (ORDER BY delay_seconds) as median,
+                    percentile_cont(0.05) WITHIN GROUP (ORDER BY delay_seconds) as p05,
+                    percentile_cont($5) WITHIN GROUP (ORDER BY delay_seconds) as pn
                 FROM data
             """
             stats = await conn.fetchrow(
@@ -532,7 +532,12 @@ async def get_delay_distribution(
     summary="Get Next Bus Predicted Times",
     description="Returns scheduled, actual, and predicted times for the next bus.",
 )
-async def get_next_buses(stop_id: str):
+async def get_next_buses(
+    stop_id: str,
+    confidence: float = Query(
+        95.0, description="Confidence percentile (50, 75, 90, 95, 99)"
+    ),
+):
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
 
@@ -540,6 +545,9 @@ async def get_next_buses(stop_id: str):
     # Resolve stop_code to stop_id if necessary
     if stop_id in stop_code_to_id:
         stop_id = stop_code_to_id[stop_id]
+
+    snapped_conf = snap_percentile(confidence)
+    target_p = snapped_conf / 100.0
 
     # 1. Find next scheduled bus
     now = datetime.datetime.now()
@@ -557,7 +565,7 @@ async def get_next_buses(stop_id: str):
                 break
 
     if not next_bus:
-        return NextBusesResponse(stop_id=input_id)
+        return NextBusesResponse(stop_id=input_id, confidence=snapped_conf)
 
     sched_sec, sched_str, trip_id = next_bus
 
@@ -566,6 +574,7 @@ async def get_next_buses(stop_id: str):
     arrive_by_str = None
     is_stale = False
     last_updated_str = None
+    low_confidence = False
 
     try:
         async with pool.acquire() as conn:
@@ -593,42 +602,53 @@ async def get_next_buses(stop_id: str):
                 s = actual_sec % 60
                 actual_str = f"{h:02d}:{m:02d}:{s:02d}"
 
-            # 3. Calculate predicted time based on historical median + ADV-01 arrive_by
+            # 3. Calculate predicted time based on historical median + dynamic confidence arrive_by
             now_utc = datetime.datetime.now(datetime.timezone.utc)
             window_start = (now_utc - datetime.timedelta(hours=1)).time()
             window_end = (now_utc + datetime.timedelta(hours=1)).time()
             is_weekend = now_utc.weekday() >= 5
             day_type = "weekend" if is_weekend else "weekday"
 
-            query = """
-                SELECT delay_seconds 
-                FROM delay_observations 
-                WHERE stop_id = $1 
-                AND observed_at::time >= $2 
-                AND observed_at::time <= $3
-                AND (
-                    ($4 = 'weekend' AND EXTRACT(DOW FROM observed_at) IN (0, 6))
-                    OR
-                    ($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
+            # D-03: Use approximate aggregates if available, otherwise exact sorting
+            # We use PERCENTILE_CONT (exact) since percentile_agg is missing in the environment
+            stats_query = """
+                WITH data AS (
+                    SELECT delay_seconds 
+                    FROM delay_observations 
+                    WHERE stop_id = $1 
+                    AND observed_at::time >= $2 
+                    AND observed_at::time <= $3
+                    AND (
+                        ($4 = 'weekend' AND EXTRACT(DOW FROM observed_at) IN (0, 6))
+                        OR
+                        ($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
+                    )
                 )
+                SELECT 
+                    COUNT(*) as obs_count,
+                    percentile_cont(0.5) WITHIN GROUP (ORDER BY delay_seconds) as median,
+                    percentile_cont($5) WITHIN GROUP (ORDER BY delay_seconds) as pn
+                FROM data
             """
-            hist_rows = await conn.fetch(
-                query, stop_id, window_start, window_end, day_type
+            stats = await conn.fetchrow(
+                stats_query, stop_id, window_start, window_end, day_type, target_p
             )
-            if hist_rows:
-                delays = [r["delay_seconds"] for r in hist_rows]
-                median_delay = int(np.median(delays))
+
+            if stats and stats["obs_count"] > 0:
+                obs_count = stats["obs_count"]
+                low_confidence = obs_count < 10
+
+                median_delay = int(stats["median"] or 0)
                 pred_sec = sched_sec + median_delay
                 ph = (pred_sec // 3600) % 24
                 pm = (pred_sec % 3600) // 60
                 ps = pred_sec % 60
                 predicted_str = f"{ph:02d}:{pm:02d}:{ps:02d}"
 
-                # ADV-01: 95th percentile "Arrive By" recommendation
-                # Use the 95th percentile of historical delays to calculate
-                # when the user should arrive to catch the bus 95% of the time
-                p95_delay = int(np.percentile(delays, 95))
-                arrive_by_sec = sched_sec + p95_delay
+                # ADV-01: Dynamic "Arrive By" recommendation
+                # D-05: Safety cap - arrive_by_sec = min(sched_sec, sched_sec + percentile_delay_sec)
+                pn_delay = int(stats["pn"] or 0)
+                arrive_by_sec = min(sched_sec, sched_sec + pn_delay)
                 ah = (arrive_by_sec // 3600) % 24
                 am = (arrive_by_sec % 3600) // 60
                 asec = arrive_by_sec % 60
@@ -649,6 +669,8 @@ async def get_next_buses(stop_id: str):
         actual_time=actual_str,
         predicted_time=predicted_str,
         arrive_by_time=arrive_by_str,
+        confidence=snapped_conf,
+        low_confidence=low_confidence,
         is_stale=is_stale,
         last_updated=last_updated_str,
     )
