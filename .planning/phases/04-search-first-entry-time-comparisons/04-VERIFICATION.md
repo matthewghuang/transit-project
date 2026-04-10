@@ -1,9 +1,18 @@
 ---
 phase: 04-search-first-entry-time-comparisons
-verified: 2026-04-10T18:15:00Z
+verified: 2026-04-10T18:30:00Z
 status: human_needed
 score: 7/7 must-haves verified
 overrides_applied: 0
+re_verification:
+  previous_status: human_needed
+  previous_score: 7/7
+  gaps_closed:
+    - "Stop ID display was missing '#' prefix (from 04-06-PLAN)"
+    - "Search was missing stop_code priority (from 04-06-PLAN)"
+    - "Hero status was cluttered (from 04-06-PLAN)"
+  gaps_remaining: []
+  regressions: []
 gaps: []
 deferred: []
 human_verification:
@@ -21,9 +30,9 @@ human_verification:
 # Phase 4: Search-First Entry & Time Comparisons Verification Report
 
 **Phase Goal:** Transition to a search-centric UX that provides immediate value through multi-dimensional arrival times.
-**Verified:** 2026-04-10T18:15:00Z
+**Verified:** 2026-04-10T18:30:00Z
 **Status:** human_needed
-**Re-verification:** No — initial verification
+**Re-verification:** Yes — after gap closure
 
 ## Goal Achievement
 
@@ -31,13 +40,13 @@ human_verification:
 
 | #   | Truth   | Status     | Evidence       |
 | --- | ------- | ---------- | -------------- |
-| 1   | Users can find a stop by intersection or 5-digit stop number | ✓ VERIFIED | `api.py` implements fuzzy search and stop_id prioritization; `HeroSearch.tsx` provides the UI. |
-| 2   | The map is removed from the interface | ✓ VERIFIED | `Leaflet` imports removed; `Map.tsx` deleted; `App.tsx` no longer uses Map. |
-| 3   | Every search result displays a side-by-side comparison of Scheduled vs. Actual vs. Predicted (Historical) time | ✓ VERIFIED | `TimeTriad.tsx` implements the triad display with fallback logic. |
+| 1   | Users can find a stop by intersection or 5-digit stop number | ✓ VERIFIED | `api.py` (L213) uses `pg_trgm` and matches `stop_code`/`stop_id`. |
+| 2   | The map is removed from the interface | ✓ VERIFIED | Leaflet imports removed from components; `Map.tsx` deleted. |
+| 3   | Every search result displays a side-by-side comparison of Scheduled vs. Actual vs. Predicted (Historical) time | ✓ VERIFIED | `TimeTriad.tsx` (L49-56) renders a grid with Scheduled/Actual/Predicted columns. |
 | 4   | The search interface is primary and optimized for one-handed mobile use | ✓ VERIFIED | `HeroSearch.tsx` provides a centered, large input search-first landing page. |
-| 5   | Searching for a route name (e.g. 'R5') returns stops serving that route | ✓ VERIFIED | `api.py` contains logic to resolve route names and JOIN with observations. |
-| 6   | Actual and Predicted times are null in API if data is unavailable | ✓ VERIFIED | `api.py` removed fallbacks to scheduled time. |
-| 7   | Historical delay distribution (PDF) chart is visible in expanded view | ✓ VERIFIED | `TimeTriad.tsx` renders `DelayDistributionChart` in expanded state with min-height. |
+| 5   | Searching for a route name (e.g. 'R5') returns stops serving that route | ✓ VERIFIED | `api.py` (L233) logic joins stops with observations to resolve routes. |
+| 6   | Actual and Predicted times are null in API if data is unavailable | ✓ VERIFIED | `api.py` provides distinct fields without fallback to scheduled. |
+| 7   | Historical delay distribution (PDF) chart is visible in expanded view | ✓ VERIFIED | `TimeTriad.tsx` (L59) renders `DelayDistributionChart` in expanded state. |
 
 **Score:** 7/7 truths verified
 
@@ -45,27 +54,27 @@ human_verification:
 
 | Artifact | Expected | Status | Details |
 | -------- | ----------- | ------ | ------- |
-| `api.py` | Search endpoint & arrival logic | ✓ VERIFIED | Level 1-3 passed. |
-| `frontend/src/components/HeroSearch.tsx` | Search landing UI | ✓ VERIFIED | Level 1-3 passed. Centered search bar + dropdown. |
-| `frontend/src/components/TimeTriad.tsx` | Time triad visualization | ✓ VERIFIED | Level 1-3 passed. Implements Hero Time logic. |
-| `frontend/src/components/StopDashboard.tsx` | Dashboard container | ✓ VERIFIED | Level 1-3 passed. Simplified UI. |
-| `frontend/src/components/DelayDistributionChart.tsx` | Reliability chart | ✓ VERIFIED | Level 1-3 passed. |
+| `api.py` | Search endpoint & arrival logic | ✓ VERIFIED | Level 1-4. Real data flowing from Postgres. |
+| `frontend/src/components/HeroSearch.tsx` | Search landing UI | ✓ VERIFIED | Level 1-4. Wired to `/api/stops/search`. |
+| `frontend/src/components/TimeTriad.tsx` | Time triad visualization | ✓ VERIFIED | Level 1-4. Correct Hero logic & expansion. |
+| `frontend/src/components/StopDashboard.tsx` | Dashboard container | ✓ VERIFIED | Level 1-4. Wired via `selectedStopId` state. |
+| `frontend/src/components/DelayDistributionChart.tsx` | Reliability chart | ✓ VERIFIED | Level 1-4. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 | ---- | --- | --- | ------ | ------- |
-| `/api/stops/search` | PostgreSQL `stops` table | trigram search | ✓ WIRED | `pg_trgm` extension used with GIST index. |
-| `HeroSearch.tsx` | `/api/stops/search` | `ky` fetch | ✓ WIRED | Implements auto-suggest logic. |
-| `App.tsx` | `StopDashboard.tsx` | `selectedStopId` state | ✓ WIRED | Switches views based on selection. |
-| `TimeTriad.tsx` | `DelayDistributionChart.tsx` | React Component | ✓ WIRED | Conditional rendering in expanded state. |
+| `HeroSearch.tsx` | `api.py` | `fetch('/api/stops/search')` | ✓ WIRED | Confirmed in code. |
+| `api.py` | PostgreSQL | `similarity()` & `stop_code` | ✓ WIRED | Trigram search and ID/Code priority confirmed. |
+| `TimeTriad.tsx` | `DelayDistributionChart.tsx` | Props | ✓ WIRED | Conditional rendering confirmed. |
+| `App.tsx` | `StopDashboard.tsx` | `selectedStopId` | ✓ WIRED | View switching logic confirmed. |
 
 ### Data-Flow Trace (Level 4)
 
 | Artifact | Data Variable | Source | Produces Real Data | Status |
 | -------- | ------------- | ------ | ------------------ | ------ |
-| `TimeTriad.tsx` | `data` | `useNextBuses` -> API | ✓ FLOWING | Fetches real-time and historical data from DB. |
-| `HeroSearch.tsx` | `results` | `/api/stops/search` | ✓ FLOWING | Uses trigram search on `stops` table. |
+| `TimeTriad.tsx` | `data` | `api.py` -> DB | ✓ FLOWING | Fetches actual/predicted times from DB. |
+| `HeroSearch.tsx` | `results` | `api.py` -> `stops` table | ✓ FLOWING | Returns real stop metadata. |
 
 ### Behavioral Spot-Checks
 
@@ -79,45 +88,45 @@ human_verification:
 
 | Requirement | Source Plan | Description | Status | Evidence |
 | ----------- | ---------- | ----------- | ------ | -------- |
-| SRCH-01 | 04-02 | Search by intersection | ✓ SATISFIED | `HeroSearch.tsx` + `api.py` fuzzy search. |
-| SRCH-02 | 04-01 | Search by stop number | ✓ SATISFIED | `api.py` prioritizes numeric stop_id. |
-| SRCH-03 | 04-01 | Backend fuzzy matching | ✓ SATISFIED | `pg_trgm` extension enabled in `db_init.py`. |
-| SRCH-04 | 04-03 | Triad time display | ✓ SATISFIED | `TimeTriad.tsx` displays triad. |
-| SRCH-05 | 04-02 | Mobile search UI | ✓ SATISFIED | `HeroSearch.tsx` design. |
-| UIO-01 | 04-02 | Map removal | ✓ SATISFIED | `Map.tsx` deleted. |
+| SRCH-01 | 04-02 | Search by intersection | ✓ SATISFIED | Trigram search in `api.py`. |
+| SRCH-02 | 04-01 | Search by stop number | ✓ SATISFIED | `stop_code` matching in `api.py`. |
+| SRCH-03 | 04-01 | Backend fuzzy matching | ✓ SATISFIED | `pg_trgm` used on `stop_name`. |
+| SRCH-04 | 04-03 | Triad time display | ✓ SATISFIED | `TimeTriad.tsx` implements triad. |
+| SRCH-05 | 04-02 | Mobile search UI | ✓ SATISFIED | `HeroSearch.tsx` centered layout. |
+| UIO-01 | 04-02 | Map removal | ✓ SATISFIED | Component and logic removed. |
 | UIO-04 | 04-03 | Expanded triad detail | ✓ SATISFIED | `TimeTriad.tsx` expansion logic. |
 
 ### Anti-Patterns Found
 
 | File | Line | Pattern | Severity | Impact |
 | ---- | ---- | ------- | -------- | ------ |
-| `frontend/src/index.html` | 13 | Leaflet CSS link | ℹ️ INFO | Leftover CSS link in HTML; doesn't affect functionality. |
+| `frontend/src/index.html` | 13 | Leaflet CSS link | ℹ️ INFO | Leftover CSS link; no functional impact. |
 
 ### Human Verification Required
 
-### 1. Search Interaction & Accuracy
+### 1. Search UX & Result Quality
 
-**Test:** Type common intersection names and stop IDs in the search bar.
-**Expected:** Dropdown appears quickly with relevant suggestions. Numeric searches put the exact match at the top.
-**Why human:** Evaluating the "feel" and accuracy of fuzzy search results.
+**Test:** Perform searches for specific stop codes (e.g. 50959) and intersections (e.g. "Main & 41st").
+**Expected:** Results appear instantly. Exact ID matches are prioritized. Names are fuzzy-matched correctly.
+**Why human:** Evaluating the subjective quality and responsiveness of search results.
 
-### 2. View Transition
+### 2. View Transition Flow
 
-**Test:** Select a stop from the search results.
-**Expected:** The search UI is replaced by the stop dashboard.
-**Why human:** Verifying the smoothness of the SPA navigation flow.
+**Test:** Select a stop result from the search bar.
+**Expected:** The hero landing page is replaced by the stop dashboard without a full page reload.
+**Why human:** Verifying the smoothness of the SPA state transition.
 
-### 3. Time Triad Expansion & Chart
+### 3. Time Triad & Chart Visibility
 
-**Test:** Click on the "Next Arrival" time triad card.
-**Expected:** Card expands to show all three times and the delay distribution chart. Chart is clearly visible and readable.
-**Why human:** Layout and visualization quality verification.
+**Test:** In the dashboard, click the "Hero Time" card to expand it.
+**Expected:** The card expands to show Scheduled/Actual/Predicted times in a grid, and the delay distribution chart renders below them.
+**Why human:** Verifying layout stability and chart rendering quality.
 
 ### Gaps Summary
 
-No technical gaps found. The implementation matches the goal of a search-first, map-free dashboard with multi-dimensional arrival times. The code is well-wired, and the backend supports the required search and analytical queries.
+Phase 4 is technically complete. All UAT gaps identified in previous plans (04-04 and 04-06) regarding stop ID display, search priority, and UI centering have been resolved in the code. The transition from map-centric to search-centric is successful.
 
 ---
 
-_Verified: 2026-04-10T18:15:00Z_
+_Verified: 2026-04-10T18:30:00Z_
 _Verifier: the agent (gsd-verifier)_
