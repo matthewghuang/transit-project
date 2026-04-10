@@ -36,7 +36,7 @@
 - [x] 04-01-PLAN.md — Backend Search & Schema Cleanup
 - [x] 04-02-PLAN.md — Frontend Map Removal & Hero UI
 - [x] 04-03-PLAN.md — Stop Dashboard & Time Triad
-- [ ] 04-04-PLAN.md — UAT Gap Closure (Search & UI)
+- [x] 04-04-PLAN.md — UAT Gap Closure (Search & UI)
 **UI hint**: yes
 
 ### Phase 5: Advanced Reliability Insights
