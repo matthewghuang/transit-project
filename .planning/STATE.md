@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Advanced Reliability
 status: planning
-last_updated: "2026-04-10T18:08:25.963Z"
+last_updated: "2026-04-10T18:16:05.503Z"
 progress:
-  total_phases: 2
-  completed_phases: 0
-  total_plans: 6
-  completed_plans: 5
-  percent: 83
+  total_phases: 3
+  completed_phases: 1
+  total_plans: 7
+  completed_plans: 6
+  percent: 86
 ---
 
 # Project State: Translink Delay Distribution Dashboard
@@ -24,7 +24,7 @@ progress:
 Phase: 05
 Plan: Not started
 **Status:** Ready to plan
-**Progress:** [████████░░] 83%
+**Progress:** [█████████░] 86%
 
 ## Performance Metrics
 
@@ -57,3 +57,4 @@ Plan: Not started
 | 260409-uhf | When a user clicks a stop, it should show an additional 3 things: the scheduled time of the next bus, the actual time of the next bus (including delays), and a predicted time of the next bus based on historical delays | 2026-04-10 | b1963a8 | [260409-uhf-when-a-user-clicks-a-stop-it-should-show](./quick/260409-uhf-when-a-user-clicks-a-stop-it-should-show/) |
 | Phase 04 P03 | 45m | 6 tasks | 10 files |
 | Phase 04 P06 | 12 min | 2 tasks | 3 files |
+| Phase 04-search-first P07 | 1 min | 3 tasks | 3 files |
