@@ -52,9 +52,9 @@ These requirements were delivered in Milestone v1.0.
 | SRCH-03 | Phase 4 | Complete |
 | SRCH-04 | Phase 4 | Complete |
 | SRCH-05 | Phase 4 | Complete |
-| ADV-01 | Phase 5 | Pending |
-| ADV-02 | Phase 5 | Pending |
-| ADV-03 | Phase 5 | Pending |
+| ADV-01 | Phase 5 | Complete |
+| ADV-02 | Phase 5 | Complete |
+| ADV-03 | Phase 5 | Complete |
 | CORE-03 | - | Deferred |
 | UIO-01 | Phase 4 | Complete |
 | UIO-02 | - | Deferred |
