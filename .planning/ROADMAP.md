@@ -37,6 +37,7 @@
 - [x] 04-02-PLAN.md — Frontend Map Removal & Hero UI
 - [x] 04-03-PLAN.md — Stop Dashboard & Time Triad
 - [x] 04-04-PLAN.md — UAT Gap Closure (Search & UI)
+- [ ] 04-05-PLAN.md — Phase 4 Polish & Gap Closure
 **UI hint**: yes
 
 ### Phase 5: Advanced Reliability Insights
