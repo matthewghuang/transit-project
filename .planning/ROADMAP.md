@@ -38,7 +38,7 @@
 - [x] 04-03-PLAN.md — Stop Dashboard & Time Triad
 - [x] 04-04-PLAN.md — UAT Gap Closure (Search & UI)
 - [x] 04-05-PLAN.md — Phase 4 Polish & Gap Closure
-- [ ] 04-06-PLAN.md — UAT Final Fixes (Centering & Data)
+- [x] 04-06-PLAN.md — UAT Final Fixes (Centering & Data)
 **UI hint**: yes
 
 ### Phase 5: Advanced Reliability Insights
