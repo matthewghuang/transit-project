@@ -31,3 +31,11 @@ Per D-04, we will use an Area Chart.
 - **Data Volume**: If a stop has thousands of observations, the query might be slow.
 - **Charting Performance**: Rendering complex area charts with many points.
 
+## Open Questions (RESOLVED)
+- **Q**: Which charting library should be used?
+  - **A**: Recharts has been selected for its ease of use and integration with React.
+- **Q**: How should temporal windows be handled?
+  - **A**: A 2-hour sliding window centered on the current time, segmented by Weekday/Weekend, per user decision D-03.
+- **Q**: How to handle missing data for specific stops?
+  - **A**: The API should return a 200 OK with an empty dataset or a specific "insufficient data" indicator, allowing the UI to show a fallback message.
+
