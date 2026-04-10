@@ -40,7 +40,7 @@
 - [x] 04-05-PLAN.md — Phase 4 Polish & Gap Closure
 - [x] 04-06-PLAN.md — UAT Final Fixes (Centering & Data)
 - [x] 04-07-PLAN.md — Gap Closure: Actual Time Missing Fix
-- [ ] 04-08-PLAN.md — Gap Closure: Stop Code ID Resolution Fix
+- [x] 04-08-PLAN.md — Gap Closure: Stop Code ID Resolution Fix
 **UI hint**: yes
 
 ### Phase 5: Advanced Reliability Insights
