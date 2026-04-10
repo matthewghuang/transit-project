@@ -12,8 +12,34 @@ POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
 POSTGRES_DB = os.getenv("POSTGRES_DB", "transit")
 
 
+async def wait_for_db(retries=5, delay=5):
+    """Wait for the database to be ready."""
+    for i in range(retries):
+        try:
+            print(f"Connecting to database (attempt {i + 1}/{retries})...")
+            conn = await asyncpg.connect(
+                user=POSTGRES_USER,
+                password=POSTGRES_PASSWORD,
+                host=POSTGRES_HOST,
+                port=POSTGRES_PORT,
+                database="postgres",
+            )
+            await conn.close()
+            print("Database connection successful.")
+            return True
+        except Exception as e:
+            print(f"Database not ready: {e}")
+            await asyncio.sleep(delay)
+    return False
+
+
 async def init_db():
     try:
+        # Wait for the database to be ready
+        if not await wait_for_db():
+            print("Database not ready after retries. Aborting.")
+            return
+
         # Connect to default postgres DB to create our target DB if it doesn't exist
         conn = await asyncpg.connect(
             user=POSTGRES_USER,
