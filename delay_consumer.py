@@ -125,6 +125,31 @@ async def upsert_trip_delay(
         print(f"Error upserting trip delay for {trip_id}: {e}")
 
 
+# ADV-03: Track seen cancellations to avoid duplicate inserts
+seen_cancellations = set()
+
+
+async def log_trip_cancellation(conn, trip_id, route_id, observed_at):
+    """ADV-03: Log a trip cancellation to the database."""
+    if trip_id in seen_cancellations:
+        return
+    seen_cancellations.add(trip_id)
+    try:
+        await conn.execute(
+            """
+            INSERT INTO trip_cancellations (observed_at, trip_id, route_id, schedule_date)
+            VALUES ($1, $2, $3, $4)
+        """,
+            observed_at,
+            trip_id,
+            route_id,
+            observed_at.date(),
+        )
+        print(f"Logged cancellation: trip={trip_id}, route={route_id}")
+    except Exception as e:
+        print(f"Error logging cancellation for {trip_id}: {e}")
+
+
 async def main():
     global observation_buffer
     load_schedule()
@@ -185,6 +210,13 @@ async def main():
                     else int(time.time()),
                     datetime.timezone.utc,
                 )
+
+                # ADV-03: Detect canceled trips (schedule_relationship == CANCELED == 3)
+                if trip_update.trip.schedule_relationship == 3:
+                    await log_trip_cancellation(
+                        conn, trip_id, route_id, header_timestamp
+                    )
+                    continue
 
                 sorted_updates = sorted(
                     trip_update.stop_time_update, key=lambda x: x.stop_sequence

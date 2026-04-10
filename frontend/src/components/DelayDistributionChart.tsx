@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 
 interface Bucket {
@@ -19,6 +20,9 @@ interface Bucket {
 interface DistributionData {
   stop_id: string;
   median: number;
+  p05: number | null;
+  p95: number | null;
+  observation_count: number;
   buckets: Bucket[];
 }
 
@@ -39,18 +43,32 @@ const DelayDistributionChart: React.FC<{ stopId: string }> = ({ stopId }) => {
 
   return (
     <div style={{ marginTop: "12px", borderTop: "1px solid #eee", paddingTop: "12px" }}>
-      <div style={{ marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <div style={{ marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "4px" }}>
         <strong>Delay Distribution</strong>
-        <span style={{ 
-          background: "#e8f5e9", 
-          color: "#2e7d32", 
-          padding: "2px 6px", 
-          borderRadius: "4px",
-          fontSize: "0.85em",
-          fontWeight: "bold"
-        }}>
-          Median: {data.median.toFixed(1)}m
-        </span>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          <span style={{ 
+            background: "#e8f5e9", 
+            color: "#2e7d32", 
+            padding: "2px 6px", 
+            borderRadius: "4px",
+            fontSize: "0.85em",
+            fontWeight: "bold"
+          }}>
+            Median: {data.median.toFixed(1)}m
+          </span>
+          {data.p95 !== null && (
+            <span style={{ 
+              background: "#fff3e0", 
+              color: "#e65100", 
+              padding: "2px 6px", 
+              borderRadius: "4px",
+              fontSize: "0.85em",
+              fontWeight: "bold"
+            }}>
+              P95: {data.p95.toFixed(1)}m
+            </span>
+          )}
+        </div>
       </div>
       
       <div style={{ width: "100%", height: 120 }}>
@@ -68,6 +86,22 @@ const DelayDistributionChart: React.FC<{ stopId: string }> = ({ stopId }) => {
               formatter={(value: number) => [value, "Observations"]}
               contentStyle={{ fontSize: "12px" }}
             />
+            {/* ADV-01: P95 reference line */}
+            {data.p95 !== null && (
+              <ReferenceLine
+                x={Math.round(data.p95)}
+                stroke="#e65100"
+                strokeDasharray="4 2"
+                label={{ value: "95%", position: "top", fontSize: 9, fill: "#e65100" }}
+              />
+            )}
+            {/* Median reference line */}
+            <ReferenceLine
+              x={Math.round(data.median)}
+              stroke="#2e7d32"
+              strokeDasharray="4 2"
+              label={{ value: "Med", position: "top", fontSize: 9, fill: "#2e7d32" }}
+            />
             <Area
               type="monotone"
               dataKey="count"
@@ -79,7 +113,7 @@ const DelayDistributionChart: React.FC<{ stopId: string }> = ({ stopId }) => {
         </ResponsiveContainer>
       </div>
       <div style={{ fontSize: "0.75em", color: "#999", textAlign: "center", marginTop: "4px" }}>
-        Minutes relative to schedule
+        Minutes relative to schedule ({data.observation_count} observations)
       </div>
     </div>
   );

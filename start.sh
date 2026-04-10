@@ -22,6 +22,9 @@ echo "Waiting for infrastructure to be ready..."
 # Give it a few seconds for TimescaleDB and Kafka to initialize
 sleep 5
 
+echo "Initializing database schema and loading GTFS stops..."
+uv run python db_init.py
+
 echo "Starting backend services..."
 
 # Start producer

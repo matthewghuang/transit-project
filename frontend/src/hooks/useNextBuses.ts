@@ -1,48 +1,23 @@
-import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import ky from "ky";
 
 interface NextBusesResponse {
   stop_id: string;
   scheduled_time: string | null;
   actual_time: string | null;
   predicted_time: string | null;
+  arrive_by_time: string | null;
+  is_stale: boolean;
+  last_updated: string | null;
 }
 
 export function useNextBuses(stopId: string | null) {
-  const [data, setData] = useState<NextBusesResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
+  const { data, isLoading, error } = useQuery<NextBusesResponse>({
+    queryKey: ["next_buses", stopId],
+    queryFn: () => ky.get(`/api/stops/${stopId}/next_buses`).json(),
+    enabled: !!stopId,
+    refetchInterval: 30000, // Refresh every 30s for staleness detection
+  });
 
-  useEffect(() => {
-    if (!stopId) {
-      setData(null);
-      return;
-    }
-
-    let isMounted = true;
-    setLoading(true);
-
-    fetch(`/api/stops/${stopId}/next_buses`)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch next buses");
-        return res.json();
-      })
-      .then((json) => {
-        if (isMounted) {
-          setData(json);
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          setError(err);
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [stopId]);
-
-  return { data, loading, error };
+  return { data, loading: isLoading, error };
 }

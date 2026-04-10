@@ -1,5 +1,6 @@
 import asyncio
 import asyncpg
+import csv
 import os
 from dotenv import load_dotenv
 
@@ -31,6 +32,56 @@ async def wait_for_db(retries=5, delay=5):
             print(f"Database not ready: {e}")
             await asyncio.sleep(delay)
     return False
+
+
+async def load_stops_from_csv(conn):
+    """Load stops from GTFS static stops.txt into the stops table."""
+    stops_path = os.getenv("GTFS_STOPS_PATH", "google_transit/stops.txt")
+    try:
+        with open(stops_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            rows = []
+            for row in reader:
+                rows.append(
+                    (
+                        row["stop_id"].strip(),
+                        row.get("stop_code", "").strip() or None,
+                        row.get("stop_name", "").strip(),
+                        row.get("stop_desc", "").strip() or None,
+                        float(row["stop_lat"]) if row.get("stop_lat") else None,
+                        float(row["stop_lon"]) if row.get("stop_lon") else None,
+                        row.get("zone_id", "").strip() or None,
+                        row.get("stop_url", "").strip() or None,
+                        int(row["location_type"])
+                        if row.get("location_type", "").strip()
+                        else None,
+                        row.get("parent_station", "").strip() or None,
+                        int(row["wheelchair_boarding"])
+                        if row.get("wheelchair_boarding", "").strip()
+                        else None,
+                    )
+                )
+
+        # Upsert stops (insert or update on conflict)
+        await conn.executemany(
+            """
+            INSERT INTO stops (stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon,
+                               zone_id, stop_url, location_type, parent_station, wheelchair_boarding)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            ON CONFLICT (stop_id) DO UPDATE SET
+                stop_code = EXCLUDED.stop_code,
+                stop_name = EXCLUDED.stop_name,
+                stop_desc = EXCLUDED.stop_desc,
+                stop_lat = EXCLUDED.stop_lat,
+                stop_lon = EXCLUDED.stop_lon
+        """,
+            rows,
+        )
+        print(f"Loaded {len(rows)} stops from {stops_path} into database.")
+    except FileNotFoundError:
+        print(f"Warning: {stops_path} not found. Stops table will not be populated.")
+    except Exception as e:
+        print(f"Warning: Could not load stops.txt into database: {e}")
 
 
 async def init_db():
@@ -103,6 +154,16 @@ async def init_db():
             );
         """)
 
+        # ADV-03: Create trip_cancellations table
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS trip_cancellations (
+                observed_at TIMESTAMPTZ NOT NULL,
+                trip_id TEXT,
+                route_id TEXT,
+                schedule_date DATE
+            );
+        """)
+
         # Create stops table
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS stops (
@@ -119,6 +180,9 @@ async def init_db():
                 wheelchair_boarding INTEGER
             );
         """)
+
+        # Load stops from GTFS static stops.txt
+        await load_stops_from_csv(conn)
 
         # Enable pg_trgm extension and create index for fuzzy search
         await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")

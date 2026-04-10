@@ -152,6 +152,9 @@ class NextBusesResponse(BaseModel):
     scheduled_time: Optional[str] = None
     actual_time: Optional[str] = None
     predicted_time: Optional[str] = None
+    arrive_by_time: Optional[str] = None  # ADV-01: 95th percentile recommendation
+    is_stale: bool = False  # ADV-02: Ghost bus flag (no update in >5 min)
+    last_updated: Optional[str] = None  # ADV-02: Last real-time update timestamp
     model_config = BASE_MODEL_CONFIG
 
 
@@ -174,6 +177,9 @@ class HistogramBucket(BaseModel):
 class DistributionResponse(BaseModel):
     stop_id: str
     median: float
+    p05: Optional[float] = None  # ADV-01: 5th percentile (minutes)
+    p95: Optional[float] = None  # ADV-01: 95th percentile (minutes)
+    observation_count: int = 0
     buckets: List[HistogramBucket]
     model_config = BASE_MODEL_CONFIG
 
@@ -266,6 +272,9 @@ async def search_stops(q: str = Query(..., min_length=1)):
             for row in rows:
                 sid = row["stop_id"]
                 scode = row["stop_code"]
+                # Fallback to in-memory lookup if DB stop_code is NULL
+                if not scode:
+                    scode = id_to_stop_code.get(sid)
                 # Map numeric route_ids to route_short_names
                 route_names = set()
                 if row["route_ids"]:
@@ -436,8 +445,10 @@ async def get_delay_distribution(stop_id: str):
 
             delays = np.array([row["delay_seconds"] for row in rows])
 
-            # Median in minutes
+            # Statistics in minutes
             median_minutes = float(np.median(delays) / 60.0)
+            p05_minutes = float(np.percentile(delays, 5) / 60.0)
+            p95_minutes = float(np.percentile(delays, 95) / 60.0)
 
             # Histogram buckets (1-minute intervals)
             # Delays typically range from -5m to +20m
@@ -451,7 +462,12 @@ async def get_delay_distribution(stop_id: str):
                     buckets.append(HistogramBucket(minute=int(edge), count=int(count)))
 
             return DistributionResponse(
-                stop_id=input_id, median=median_minutes, buckets=buckets
+                stop_id=input_id,
+                median=median_minutes,
+                p05=p05_minutes,
+                p95=p95_minutes,
+                observation_count=len(delays),
+                buckets=buckets,
             )
 
     except Exception as e:
@@ -499,15 +515,27 @@ async def get_next_buses(stop_id: str):
 
     actual_str = None
     predicted_str = None
+    arrive_by_str = None
+    is_stale = False
+    last_updated_str = None
 
     try:
         async with pool.acquire() as conn:
-            # 2. Get real-time delay for this trip
+            # 2. Get real-time delay for this trip + staleness check (ADV-02)
             row = await conn.fetchrow(
-                "SELECT delay_seconds FROM trip_delays WHERE trip_id = $1",
+                "SELECT delay_seconds, updated_at FROM trip_delays WHERE trip_id = $1",
                 trip_id,
             )
             current_delay = row["delay_seconds"] if row else None
+
+            if row and row["updated_at"]:
+                last_updated = row["updated_at"]
+                last_updated_str = last_updated.strftime("%H:%M:%S")
+                # ADV-02: Ghost bus detection — stale if no update in >5 minutes
+                now_utc = datetime.datetime.now(datetime.timezone.utc)
+                age = (now_utc - last_updated).total_seconds()
+                if age > 300:  # 5 minutes
+                    is_stale = True
 
             if current_delay is not None:
                 # Calculate actual time
@@ -517,7 +545,7 @@ async def get_next_buses(stop_id: str):
                 s = actual_sec % 60
                 actual_str = f"{h:02d}:{m:02d}:{s:02d}"
 
-            # 3. Calculate predicted time based on historical median
+            # 3. Calculate predicted time based on historical median + ADV-01 arrive_by
             now_utc = datetime.datetime.now(datetime.timezone.utc)
             window_start = (now_utc - datetime.timedelta(hours=1)).time()
             window_end = (now_utc + datetime.timedelta(hours=1)).time()
@@ -548,6 +576,16 @@ async def get_next_buses(stop_id: str):
                 ps = pred_sec % 60
                 predicted_str = f"{ph:02d}:{pm:02d}:{ps:02d}"
 
+                # ADV-01: 95th percentile "Arrive By" recommendation
+                # Use the 95th percentile of historical delays to calculate
+                # when the user should arrive to catch the bus 95% of the time
+                p95_delay = int(np.percentile(delays, 95))
+                arrive_by_sec = sched_sec + p95_delay
+                ah = (arrive_by_sec // 3600) % 24
+                am = (arrive_by_sec % 3600) // 60
+                asec = arrive_by_sec % 60
+                arrive_by_str = f"{ah:02d}:{am:02d}:{asec:02d}"
+
     except Exception as e:
         print(f"Error calculating next buses: {e}")
 
@@ -562,4 +600,7 @@ async def get_next_buses(stop_id: str):
         scheduled_time=clean_sched_str,
         actual_time=actual_str,
         predicted_time=predicted_str,
+        arrive_by_time=arrive_by_str,
+        is_stale=is_stale,
+        last_updated=last_updated_str,
     )

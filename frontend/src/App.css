@@ -409,3 +409,56 @@ main {
   font-size: 1.25rem;
   color: var(--text-muted);
 }
+
+/* ADV-02: Ghost Bus Warning */
+.ghost-bus-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: #fff3e0;
+  border: 1px solid #ffcc02;
+  border-radius: 8px;
+  color: #e65100;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.ghost-icon {
+  font-size: 1.125rem;
+}
+
+.hero-display.stale {
+  opacity: 0.5;
+}
+
+/* ADV-01: Arrive-By Section */
+.arrive-by-section {
+  text-align: center;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed var(--border-color);
+}
+
+.arrive-by-label {
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.arrive-by-time {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #e65100;
+  line-height: 1.2;
+}
+
+.arrive-by-confidence {
+  font-size: 0.75rem;
+  color: #bf360c;
+  font-weight: 500;
+  margin-top: 0.125rem;
+}
