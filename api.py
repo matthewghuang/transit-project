@@ -1,51 +1,46 @@
-from pymongo import AsyncMongoClient
-from fastapi import FastAPI, Body, HTTPException, status
-from fastapi.responses import Response
-from pydantic import ConfigDict, BaseModel, Field, EmailStr
-from pydantic.functional_validators import BeforeValidator
+from fastapi import FastAPI, HTTPException, status
+from pydantic import ConfigDict, BaseModel
 import os
 from dotenv import load_dotenv
 from typing import Optional, List
-from typing_extensions import Annotated
 import datetime
-
-from fastapi.staticfiles import StaticFiles
+import asyncpg
 
 app = FastAPI(title="Realtime Transit Dashboard API")
 
 load_dotenv()
 
-MONGO_USER = os.getenv("MONGO_USER", "root")
-MONGO_PASSWORD = os.getenv("MONGO_PASSWORD", "example")
-MONGO_HOST = os.getenv("MONGO_HOST", "localhost")
-MONGO_PORT = os.getenv("MONGO_PORT", "27017")
-MONGO_DB = os.getenv("MONGO_DB", "position")
+# TimescaleDB configuration
+POSTGRES_USER = os.getenv("POSTGRES_USER", "postgres")
+POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "postgres")
+POSTGRES_HOST = os.getenv("POSTGRES_HOST", "localhost")
+POSTGRES_PORT = os.getenv("POSTGRES_PORT", "5432")
+POSTGRES_DB = os.getenv("POSTGRES_DB", "transit")
 
-if os.getenv("MONGO_CONNECTION_STRING"):
-    MONGO_CONNECTION_STRING = os.getenv("MONGO_CONNECTION_STRING")
-else:
-    MONGO_CONNECTION_STRING = (
-        f"mongodb://{MONGO_USER}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/"
+pool = None
+
+
+@app.on_event("startup")
+async def startup():
+    global pool
+    pool = await asyncpg.create_pool(
+        user=POSTGRES_USER,
+        password=POSTGRES_PASSWORD,
+        host=POSTGRES_HOST,
+        port=POSTGRES_PORT,
+        database=POSTGRES_DB,
     )
 
-client = AsyncMongoClient(MONGO_CONNECTION_STRING)
 
-db = client[MONGO_DB]
-collection = db.get_collection("vehicle")
+@app.on_event("shutdown")
+async def shutdown():
+    await pool.close()
 
-PyObjectId = Annotated[str, BeforeValidator(str)]
 
 BASE_MODEL_CONFIG = ConfigDict(
     populate_by_name=True,
     arbitrary_types_allowed=True,
 )
-
-
-# Innermost vehicle object
-class VehicleIdentity(BaseModel):
-    id: str
-    label: str
-    model_config = BASE_MODEL_CONFIG
 
 
 # Position object
@@ -55,39 +50,19 @@ class Position(BaseModel):
     model_config = BASE_MODEL_CONFIG
 
 
-# Trip object
+# Simplified Trip object for flattened SQL results
 class Trip(BaseModel):
     tripId: str
-    startDate: str
-    scheduleRelationship: str
     routeId: str
-    route_name: Optional[str] = None
-    directionId: int
     model_config = BASE_MODEL_CONFIG
 
 
-# Main 'vehicle' data object
-class VehicleDetails(BaseModel):
-    trip: Trip
-    position: Position
-    currentStopSequence: int
-    currentStatus: str
-    timestamp: str  # Timestamp is a string in the input
-    stopId: str
-    vehicle: VehicleIdentity
-    delay_seconds: Optional[int] = None
-    next_stop_id: Optional[str] = None
-    model_config = BASE_MODEL_CONFIG
-
-
-# The root model
+# Main vehicle data object flattened to match active_vehicles schema
 class VehicleUpdate(BaseModel):
     id: str
-    vehicle: VehicleDetails
-    # Use 'alias' to handle the field name '_id'
-    # which is awkward in Python.
-    mongo_id: PyObjectId = Field(alias="_id")
-    timestamp: datetime
+    trip: Trip
+    position: Position
+    timestamp: datetime.datetime
     model_config = BASE_MODEL_CONFIG
 
 
@@ -95,38 +70,35 @@ class VehicleUpdate(BaseModel):
     "/api/vehicles/",
     response_model=List[VehicleUpdate],
     summary="Get All Vehicle Positions",
-    description="Retrieves a list of all current vehicle position documents from the database.",
+    description="Retrieves current vehicle positions from TimescaleDB.",
 )
 async def get_all_vehicles():
-    """
-    Fetches all documents from the 'vehicle' collection.
+    if pool is None:
+        raise HTTPException(status_code=500, detail="Database pool not initialized")
 
-    The route uses an async cursor to iterate over all documents
-    and returns them as a list. FastAPI automatically serializes
-    the MongoDB documents into the `VehicleUpdate` response model.
-    """
-    vehicles = []
     try:
-        cursor = collection.find({})
-        async for document in cursor:
-            vehicles.append(document)
+        async with pool.acquire() as conn:
+            rows = await conn.fetch(
+                "SELECT vehicle_id, route_id, trip_id, latitude, longitude, updated_at FROM active_vehicles"
+            )
 
-        print("{vehicles=}")
+            vehicles = []
+            for row in rows:
+                vehicles.append(
+                    VehicleUpdate(
+                        id=row["vehicle_id"],
+                        trip=Trip(tripId=row["trip_id"], routeId=row["route_id"]),
+                        position=Position(
+                            latitude=row["latitude"], longitude=row["longitude"]
+                        ),
+                        timestamp=row["updated_at"],
+                    )
+                )
 
-        if not vehicles:
-            raise HTTPException(status_code=404, detail="No vehicles found")
-
-        return vehicles
+            return vehicles
     except Exception as e:
-        # Log the error for debugging
         print(f"Error fetching vehicles: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while fetching vehicle data: {e}",
         )
-
-
-# Mount the static files from the built frontend
-# In production, this will serve the React app
-# if os.path.exists("frontend/dist"):
-# 	app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="frontend")
