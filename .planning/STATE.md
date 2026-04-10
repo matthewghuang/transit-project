@@ -47,13 +47,14 @@ Plan: Not started
 
 ## Session Continuity
 
-- **Last Action:** Completed quick task 260409-uhf: When a user clicks a stop, it should show an additional 3 things: the scheduled time of the next bus, the actual time of the next bus (including delays), and a predicted time of the next bus based on historical delays
+- **Last Action:** Completed quick task 260410-fop: Remove the 'Transit Dashboard' header and the white sidebar from the hero/main layout to create a cleaner, more focused UI.
 - **Next Step:** User approval of the roadmap followed by Phase 1 planning.
 
 ### Quick Tasks Completed
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
+| 260410-fop | Remove the 'Transit Dashboard' header and the white sidebar | 2026-04-10 | 65392fd | [260410-fop-remove-transit-dashboard-header-remove-w](./quick/260410-fop-remove-transit-dashboard-header-remove-w/) |
 | 260409-uhf | When a user clicks a stop, it should show an additional 3 things: the scheduled time of the next bus, the actual time of the next bus (including delays), and a predicted time of the next bus based on historical delays | 2026-04-10 | b1963a8 | [260409-uhf-when-a-user-clicks-a-stop-it-should-show](./quick/260409-uhf-when-a-user-clicks-a-stop-it-should-show/) |
 | Phase 04 P03 | 45m | 6 tasks | 10 files |
 | Phase 04 P06 | 12 min | 2 tasks | 3 files |
