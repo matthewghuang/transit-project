@@ -29,6 +29,15 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
     return result;
   }, [data, filters]);
 
+  const filteredStops = useMemo(() => {
+    if (!stops) return [];
+    if (filters.length === 0) return stops;
+    
+    return stops.filter((stop) => 
+      stop.routes.some((route) => filters.includes(route))
+    );
+  }, [stops, filters]);
+
   return (
     <MapContainer
       center={centerPosition}
@@ -71,7 +80,7 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
       ))}
 
       {/* Render Stops as red circles with delay distribution popups */}
-      {stops?.map((stop) => (
+      {filteredStops?.map((stop) => (
         <CircleMarker
           key={`stop-${stop.id}`}
           center={[stop.latitude, stop.longitude]}
@@ -93,6 +102,7 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
               </strong>
               <div style={{ color: "#666", fontSize: "0.9em" }}>
                 Stop ID: {stop.id}<br />
+                Routes: {stop.routes.join(", ")}<br />
                 Observations: {stop.observation_count}
 
                 <Suspense fallback={<div>Loading chart...</div>}>

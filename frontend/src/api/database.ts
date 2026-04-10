@@ -25,6 +25,7 @@ export type StopInfo = {
   latitude: number;
   longitude: number;
   observation_count: number;
+  routes: string[];
 };
 
 export const fetchPositions = async (): Promise<VehicleUpdate[]> => {

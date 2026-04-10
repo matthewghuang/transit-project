@@ -114,6 +114,7 @@ class StopInfo(BaseModel):
     latitude: float
     longitude: float
     observation_count: int
+    routes: List[str]
     model_config = BASE_MODEL_CONFIG
 
 
@@ -177,7 +178,7 @@ async def get_all_vehicles():
     "/api/stops",
     response_model=List[StopInfo],
     summary="Get Stops With Delay Data",
-    description="Returns stops that have delay observations, enriched with GTFS metadata.",
+    description="Returns stops that have delay observations, enriched with GTFS metadata and route information.",
 )
 async def get_stops():
     if pool is None:
@@ -187,7 +188,7 @@ async def get_stops():
         async with pool.acquire() as conn:
             rows = await conn.fetch(
                 """
-                SELECT stop_id, COUNT(*) as cnt
+                SELECT stop_id, COUNT(*) as cnt, array_agg(DISTINCT route_id) as route_ids
                 FROM delay_observations
                 GROUP BY stop_id
                 ORDER BY cnt DESC
@@ -199,6 +200,13 @@ async def get_stops():
                 sid = row["stop_id"]
                 meta = stops_lookup.get(sid)
                 if meta:
+                    # Map numeric route_ids to route_short_names
+                    route_names = set()
+                    if row["route_ids"]:
+                        for rid in row["route_ids"]:
+                            if rid:
+                                route_names.add(routes_lookup.get(rid, rid))
+
                     stops.append(
                         StopInfo(
                             id=sid,
@@ -206,6 +214,7 @@ async def get_stops():
                             latitude=meta["lat"],
                             longitude=meta["lon"],
                             observation_count=row["cnt"],
+                            routes=list(route_names),
                         )
                     )
             return stops
