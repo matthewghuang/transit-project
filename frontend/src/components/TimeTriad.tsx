@@ -53,7 +53,9 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
             ))}
           </div>
           
-          <DelayDistributionChart stopId={stopId} />
+          <div style={{ minHeight: '180px' }}>
+            <DelayDistributionChart stopId={stopId} />
+          </div>
           
           <div className="triad-hint">Click to collapse</div>
         </div>
