@@ -32,11 +32,10 @@
   2. Database performance remains stable under continuous write load from the real-time enricher.
   3. Storage schema supports efficient time-bucketed queries for historical aggregation.
 **Plans**: 2 plans
-
-Plans:
 - [x] 02-01-PLAN.md — Set up TimescaleDB infrastructure and initialize SQL schema
 - [x] 02-02-PLAN.md — Migrate consumer to SQL batching and update API to SQL backend
 
+### Phase 3: Probabilistic API & Visualization
 **Goal**: Transform raw historical data into actionable probabilistic insights for commuters.
 **Depends on**: Phase 2
 **Requirements**: REL-03, REL-04
@@ -44,7 +43,9 @@ Plans:
   1. A FastAPI endpoint provides Kernel Density Estimation (KDE) data for a given stop and time window.
   2. The UI renders a smooth probability distribution curve showing arrival likelihoods.
   3. Users can see a "Typical Delay" summary statistic derived from the historical dataset.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 03-01-PLAN.md — Implement backend API for delay distributions
+- [ ] 03-02-PLAN.md — Implement frontend area chart visualization
 **UI hint**: yes
 
 ## Progress Table
