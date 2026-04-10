@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from typing import Optional, List
 import datetime
 import asyncpg
+import numpy as np
+
 
 app = FastAPI(title="Realtime Transit Dashboard API")
 
@@ -66,6 +68,19 @@ class VehicleUpdate(BaseModel):
     model_config = BASE_MODEL_CONFIG
 
 
+class HistogramBucket(BaseModel):
+    minute: int
+    count: int
+    model_config = BASE_MODEL_CONFIG
+
+
+class DistributionResponse(BaseModel):
+    stop_id: str
+    median: float
+    buckets: List[HistogramBucket]
+    model_config = BASE_MODEL_CONFIG
+
+
 @app.get(
     "/api/vehicles/",
     response_model=List[VehicleUpdate],
@@ -96,9 +111,79 @@ async def get_all_vehicles():
                 )
 
             return vehicles
+        except Exception as e:
+            print(f"Error fetching vehicles: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"An error occurred while fetching vehicle data: {e}",
+            )
+
+
+@app.get(
+    "/api/distribution/{stop_id}",
+    response_model=DistributionResponse,
+    summary="Get Delay Distribution for a Stop",
+    description="Calculates delay distribution histogram and median for a 2-hour window around current time.",
+)
+async def get_delay_distribution(stop_id: str):
+    if pool is None:
+        raise HTTPException(status_code=500, detail="Database pool not initialized")
+
+    try:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        # 2-hour window centered on current time (1 hour before, 1 hour after)
+        # Note: In a real system we might adjust this to be 'time of day' independent of date
+        window_start = (now - datetime.timedelta(hours=1)).time()
+        window_end = (now + datetime.timedelta(hours=1)).time()
+
+        is_weekend = now.weekday() >= 5
+        day_type = "weekend" if is_weekend else "weekday"
+
+        async with pool.acquire() as conn:
+            # We filter by time of day (ignoring the date part for historical patterns)
+            # and by weekday/weekend
+            query = """
+                SELECT delay_seconds 
+                FROM delay_observations 
+                WHERE stop_id = $1 
+                AND observed_at::time >= $2 
+                AND observed_at::time <= $3
+                AND (
+                    ($4 = 'weekend' AND EXTRACT(DOW FROM observed_at) IN (0, 6))
+                    OR
+                    ($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
+                )
+            """
+            rows = await conn.fetch(query, stop_id, window_start, window_end, day_type)
+
+            if not rows:
+                # Fallback to all data if window is empty, or return empty distribution
+                return DistributionResponse(stop_id=stop_id, median=0.0, buckets=[])
+
+            delays = np.array([row["delay_seconds"] for row in rows])
+
+            # Median in minutes
+            median_minutes = float(np.median(delays) / 60.0)
+
+            # Histogram buckets (1-minute intervals)
+            # Delays typically range from -5m to +20m
+            # We'll bucket everything between -10 and 30 minutes
+            bins = np.arange(-10, 31, 1)
+            counts, bin_edges = np.histogram(delays / 60.0, bins=bins)
+
+            buckets = []
+            for count, edge in zip(counts, bin_edges[:-1]):
+                if count > 0:  # Only return non-empty buckets to save bandwidth
+                    buckets.append(HistogramBucket(minute=int(edge), count=int(count)))
+
+            return DistributionResponse(
+                stop_id=stop_id, median=median_minutes, buckets=buckets
+            )
+
     except Exception as e:
-        print(f"Error fetching vehicles: {e}")
+        print(f"Error calculating distribution: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred while fetching vehicle data: {e}",
+            detail=f"An error occurred while calculating delay distribution: {e}",
         )
+
