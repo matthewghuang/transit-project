@@ -18,20 +18,15 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
   const { filters, selectedStopId, setSelectedStopId } = useFilterStore();
 
   const filteredData = useMemo(() => {
-    let result = data;
+    if (!data || filters.length === 0) return [];
     
-    if (filters.length > 0) {
-      result = result?.filter((pde) =>
-        filters.includes(pde.trip.routeName)
-      );
-    }
-
-    return result;
+    return data.filter((pde) =>
+      filters.includes(pde.trip.routeName)
+    );
   }, [data, filters]);
 
   const filteredStops = useMemo(() => {
-    if (!stops) return [];
-    if (filters.length === 0) return stops;
+    if (!stops || filters.length === 0) return [];
     
     return stops.filter((stop) => 
       stop.routes.some((route) => filters.includes(route))
