@@ -16,13 +16,21 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
 
   const times = [
     { label: 'Scheduled', time: data.scheduled_time },
-    { label: 'Actual', time: data.actual_time || data.scheduled_time },
-    { label: 'Predicted', time: data.predicted_time || data.scheduled_time },
+    { label: 'Actual', time: data.actual_time || null },
+    { label: 'Predicted', time: data.predicted_time || null },
   ];
 
-  // Hero Time = min(scheduled, actual, predicted)
-  // Simple string comparison works for HH:MM:SS format
-  const heroTimeObj = times.reduce((prev, curr) => (curr.time < prev.time ? curr : prev));
+  // Hero Time logic: Priority is Actual > Predicted > Scheduled
+  let heroTimeObj = { label: 'Scheduled', time: data.scheduled_time };
+  let heroStatus = 'Scheduled';
+
+  if (data.actual_time) {
+    heroTimeObj = { label: 'Actual', time: data.actual_time };
+    heroStatus = 'Real-time';
+  } else if (data.predicted_time) {
+    heroTimeObj = { label: 'Predicted', time: data.predicted_time };
+    heroStatus = 'Prediction';
+  }
 
   return (
     <div className={`time-triad ${isExpanded ? 'expanded' : ''}`} onClick={() => setIsExpanded(!isExpanded)}>
@@ -30,7 +38,7 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
         <div className="hero-label">{heroTimeObj.label} Time</div>
         <div className="hero-display">{heroTimeObj.time}</div>
         <div className="hero-status">
-          {heroTimeObj.label === 'Actual' ? '● Real-time' : '○ Prediction'}
+          {heroStatus}
         </div>
       </div>
 
@@ -40,7 +48,7 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
             {times.map((t) => (
               <div key={t.label} className="triad-col">
                 <div className="col-label">{t.label}</div>
-                <div className="col-time">{t.time}</div>
+                <div className="col-time">{t.time || '--:--:--'}</div>
               </div>
             ))}
           </div>

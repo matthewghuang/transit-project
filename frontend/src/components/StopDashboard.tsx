@@ -23,14 +23,8 @@ export const StopDashboard: React.FC<StopDashboardProps> = ({ stopId, onBack }) 
           <h3>Next Arrival</h3>
           <TimeTriad stopId={stopId} />
         </section>
-
-        <section className="info-section">
-          <div className="info-card">
-            <h4>About this stop</h4>
-            <p>Reliability data is based on historical observations for this specific time of day.</p>
-          </div>
-        </section>
       </main>
+
     </div>
   );
 };
