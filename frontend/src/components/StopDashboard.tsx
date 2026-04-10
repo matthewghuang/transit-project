@@ -1,5 +1,6 @@
 import React from 'react';
 import { TimeTriad } from './TimeTriad';
+import { Carousel } from './Carousel';
 import { useStops } from '../hooks/useStops';
 import { useNextBuses } from '../hooks/useNextBuses';
 import { useFilterStore } from '../stores/filterStore';
@@ -17,8 +18,6 @@ export const StopDashboard: React.FC<StopDashboardProps> = ({ stopId, onBack }) 
   const stop = stops?.find(s => s.id === stopId);
   const stopName = stop ? stop.name : `Stop #${stopId}`;
 
-  const firstArrival = (arrivals && arrivals.length > 0) ? arrivals[0] : null;
-
   return (
     <div className="dashboard-container">
       <header className="dashboard-header">
@@ -34,14 +33,18 @@ export const StopDashboard: React.FC<StopDashboardProps> = ({ stopId, onBack }) 
         {loading && <div className="triad-loading">Loading predictions...</div>}
         {error && <div className="triad-error">Failed to load predictions</div>}
         
-        {!loading && !error && firstArrival && (
+        {!loading && !error && arrivals && arrivals.length > 0 && (
           <section className="triad-section">
-            <h3>Next Arrival</h3>
-            <TimeTriad stopId={stopId} arrival={firstArrival} />
+            <h3>Upcoming Buses</h3>
+            <Carousel>
+              {arrivals.map((arrival, index) => (
+                <TimeTriad key={index} stopId={stopId} arrival={arrival} />
+              ))}
+            </Carousel>
           </section>
         )}
         
-        {!loading && !error && !firstArrival && (
+        {!loading && !error && (!arrivals || arrivals.length === 0) && (
            <div className="triad-empty">No upcoming buses found</div>
         )}
       </main>
