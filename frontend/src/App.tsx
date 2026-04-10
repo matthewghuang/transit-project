@@ -9,14 +9,9 @@ export function App() {
   return (
     <div className="app-container">
       {!selectedStopId ? (
-        <>
-          <header>
-            <h1>Transit Dashboard</h1>
-          </header>
-          <main>
-            <HeroSearch onSelectStop={setSelectedStopId} />
-          </main>
-        </>
+        <main>
+          <HeroSearch onSelectStop={setSelectedStopId} />
+        </main>
       ) : (
         <StopDashboard 
           stopId={selectedStopId} 
