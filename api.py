@@ -157,7 +157,7 @@ async def get_all_vehicles():
     summary="Get Stops With Delay Data",
     description="Returns stops that have delay observations, enriched with GTFS metadata.",
 )
-async def get_stops(limit: int = Query(50, ge=1, le=500)):
+async def get_stops():
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
 
@@ -169,9 +169,7 @@ async def get_stops(limit: int = Query(50, ge=1, le=500)):
                 FROM delay_observations
                 GROUP BY stop_id
                 ORDER BY cnt DESC
-                LIMIT $1
-                """,
-                limit,
+                """
             )
 
             stops = []

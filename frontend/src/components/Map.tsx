@@ -1,5 +1,5 @@
-import { MapContainer, TileLayer, Marker, CircleMarker, Popup } from "react-leaflet";
-import L, { LatLngTuple } from "leaflet";
+import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import { LatLngTuple } from "leaflet";
 import { usePositions } from "../hooks/usePositions";
 import { useStops } from "../hooks/useStops";
 import { CSSProperties, useMemo, lazy, Suspense } from "react";
@@ -8,22 +8,6 @@ import { useFilterStore } from "../stores/filterStore";
 const DelayDistributionChart = lazy(() => import("./DelayDistributionChart"));
 
 const centerPosition: LatLngTuple = [49.246292, -123.116226];
-
-// Custom stop icon — red pin that stands out from vehicles
-const stopIcon = new L.DivIcon({
-  className: "",
-  html: `<div style="
-    width: 28px; height: 28px;
-    background: #d32f2f;
-    border: 3px solid #fff;
-    border-radius: 50% 50% 50% 0;
-    transform: rotate(-45deg);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-  "></div>`,
-  iconSize: [28, 28],
-  iconAnchor: [14, 28],
-  popupAnchor: [0, -28],
-});
 
 const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
   className,
@@ -58,7 +42,7 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      {/* Render Vehicles as small translucent dots */}
+      {/* Render Vehicles as small translucent blue dots */}
       {filteredData?.map((pos) => (
         <CircleMarker
           key={pos.id}
@@ -86,12 +70,18 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
         </CircleMarker>
       ))}
 
-      {/* Render Stops as prominent red markers with delay distributions */}
+      {/* Render Stops as red circles with delay distribution popups */}
       {stops?.map((stop) => (
-        <Marker 
+        <CircleMarker
           key={`stop-${stop.id}`}
-          position={[stop.latitude, stop.longitude] as LatLngTuple}
-          icon={stopIcon}
+          center={[stop.latitude, stop.longitude]}
+          radius={7}
+          pathOptions={{
+            color: "#b71c1c",
+            fillColor: "#d32f2f",
+            fillOpacity: 0.7,
+            weight: 2,
+          }}
           eventHandlers={{
             click: () => setSelectedStopId(stop.id),
           }}
@@ -111,7 +101,7 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
               </div>
             </div>
           </Popup>
-        </Marker>
+        </CircleMarker>
       ))}
     </MapContainer>
   );
