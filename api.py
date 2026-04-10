@@ -22,8 +22,9 @@ POSTGRES_DB = os.getenv("POSTGRES_DB", "transit")
 
 pool = None
 
-# In-memory GTFS stops lookup: stop_id -> {name, lat, lon}
+# In-memory GTFS lookups
 stops_lookup: Dict[str, dict] = {}
+routes_lookup: Dict[str, str] = {}  # route_id -> route_short_name
 
 
 def load_stops():
@@ -44,10 +45,25 @@ def load_stops():
         print(f"Warning: Could not load stops.txt: {e}")
 
 
+def load_routes():
+    """Load route names from GTFS static routes.txt into memory."""
+    global routes_lookup
+    routes_path = os.getenv("GTFS_ROUTES_PATH", "google_transit/routes.txt")
+    try:
+        with open(routes_path, "r", encoding="utf-8-sig") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                routes_lookup[row["route_id"].strip()] = row["route_short_name"].strip()
+        print(f"Loaded {len(routes_lookup)} routes from {routes_path}")
+    except Exception as e:
+        print(f"Warning: Could not load routes.txt: {e}")
+
+
 @app.on_event("startup")
 async def startup():
     global pool
     load_stops()
+    load_routes()
     pool = await asyncpg.create_pool(
         user=POSTGRES_USER,
         password=POSTGRES_PASSWORD,
@@ -79,6 +95,7 @@ class Position(BaseModel):
 class Trip(BaseModel):
     tripId: str
     routeId: str
+    routeName: str
     model_config = BASE_MODEL_CONFIG
 
 
@@ -131,10 +148,15 @@ async def get_all_vehicles():
 
             vehicles = []
             for row in rows:
+                route_id = row["route_id"]
                 vehicles.append(
                     VehicleUpdate(
                         id=row["vehicle_id"],
-                        trip=Trip(tripId=row["trip_id"], routeId=row["route_id"]),
+                        trip=Trip(
+                            tripId=row["trip_id"],
+                            routeId=route_id,
+                            routeName=routes_lookup.get(route_id, route_id),
+                        ),
                         position=Position(
                             latitude=row["latitude"], longitude=row["longitude"]
                         ),

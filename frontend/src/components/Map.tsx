@@ -22,7 +22,7 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
     
     if (filters.length > 0) {
       result = result?.filter((pde) =>
-        filters.includes(pde.trip.routeId)
+        filters.includes(pde.trip.routeName)
       );
     }
 
@@ -58,7 +58,7 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
           <Popup>
             <div style={{ padding: "4px" }}>
               <strong style={{ fontSize: "1.1em", display: "block", marginBottom: "4px" }}>
-                Route: {pos.trip.routeId}
+                Route: {pos.trip.routeName}
               </strong>
               <div style={{ color: "#666", fontSize: "0.9em" }}>
                 Vehicle ID: {pos.id}<br />

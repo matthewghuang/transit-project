@@ -8,6 +8,7 @@ export type VehiclePosition = {
 export type VehicleTrip = {
   tripId: string;
   routeId: string;
+  routeName: string;
 };
 
 // Matches the flat VehicleUpdate shape returned by the TimescaleDB API
