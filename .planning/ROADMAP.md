@@ -4,6 +4,7 @@
 
 - ✅ **v1.0 Foundation & Probabilistic Insights** — Phases 1-3 (shipped 2026-04-10)
 - ✅ **v1.1 Advanced Reliability** — Phases 4-5 (shipped 2026-04-10)
+- 🚧 **v1.2 Dynamic Confidence & Arrive-By Times** — Phases 6-7 (current)
 
 ## Phases
 
@@ -21,6 +22,14 @@
 
 - [x] Phase 4: Search-First Entry & Time Comparisons (10/10 plans) — completed 2026-04-10
 - [x] Phase 5: Advanced Reliability Insights (1/1 plans) — completed 2026-04-10
+
+</details>
+
+<details open>
+<summary>🚧 v1.2 Dynamic Confidence & Arrive-By Times (Phases 6-7) — CURRENT</summary>
+
+- [ ] **Phase 6: Dynamic Percentile Backend** - Backend safely computes and enforces dynamic confidence-based delay distributions
+- [ ] **Phase 7: Interactive Confidence UI** - Commuters can dynamically adjust and visualize their preferred reliability threshold
 
 </details>
 
@@ -60,6 +69,27 @@
 - [x] 05-01-PLAN.md — Implementation of advanced reliability features
 **UI hint**: yes
 
+### Phase 6: Dynamic Percentile Backend
+**Goal**: Backend safely computes and enforces dynamic confidence-based delay distributions
+**Depends on**: Phase 5
+**Requirements**: CORE-04, CORE-05
+**Success Criteria** (what must be TRUE):
+  1. API accepts `confidence` parameter and returns dynamic percentile delay bounds.
+  2. The recommended "arrive-by" time returned by the API is never later than the scheduled time.
+  3. Database performance remains stable when querying dynamic percentiles (no long query blocks).
+**Plans**: TBD
+
+### Phase 7: Interactive Confidence UI
+**Goal**: Commuters can dynamically adjust and visualize their preferred reliability threshold
+**Depends on**: Phase 6
+**Requirements**: CONF-01, CONF-02, CONF-03
+**Success Criteria** (what must be TRUE):
+  1. User can slide a control to discrete confidence intervals (50%, 75%, 90%, 95%, 99%).
+  2. Area under the delay chart highlights dynamically based on selected confidence.
+  3. User can bookmark or share the URL and retain their selected confidence level.
+**Plans**: TBD
+**UI hint**: yes
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -69,6 +99,8 @@
 | 3. Probabilistic API & Visualization | v1.0 | 3/3 | Complete | 2026-04-10 |
 | 4. Search-First Entry & Time Comparisons | v1.1 | 10/10 | Complete | 2026-04-10 |
 | 5. Advanced Reliability Insights | v1.1 | 1/1 | Complete | 2026-04-10 |
+| 6. Dynamic Percentile Backend | v1.2 | 0/0 | Not started | - |
+| 7. Interactive Confidence UI | v1.2 | 0/0 | Not started | - |
 
 ---
-*Last updated: April 10, 2026 after v1.0 milestone completion*
+*Last updated: April 10, 2026 after v1.2 milestone creation*
