@@ -119,28 +119,38 @@ def main():
                 # but usually delay is provided in stop_time_update.
                 # D-03: "Strict Mode" - only record if stop_time_update is present.
 
-                for stu in trip_update.stop_time_update:
-                    stop_id = stu.stop_id
+                # Sort updates by stop_sequence to identify logical 'next' stop
+                sorted_updates = sorted(
+                    trip_update.stop_time_update, key=lambda x: x.stop_sequence
+                )
+
+                # Pick the first one as the 'next' stop (logical approximation for now)
+                # In a more advanced implementation, we'd compare against current_stop_sequence
+                if sorted_updates:
+                    next_stu = sorted_updates[0]
+                    stop_id = next_stu.stop_id
 
                     delay_seconds = None
-                    if stu.HasField("arrival") and stu.arrival.HasField("delay"):
-                        delay_seconds = stu.arrival.delay
-                    elif stu.HasField("departure") and stu.departure.HasField("delay"):
-                        delay_seconds = stu.departure.delay
+                    if next_stu.HasField("arrival") and next_stu.arrival.HasField(
+                        "delay"
+                    ):
+                        delay_seconds = next_stu.arrival.delay
+                    elif next_stu.HasField("departure") and next_stu.departure.HasField(
+                        "delay"
+                    ):
+                        delay_seconds = next_stu.departure.delay
 
                     # If delay is not explicitly provided, calculate it if we have scheduled time
                     if delay_seconds is None and (trip_id, stop_id) in schedule_cache:
                         scheduled_seconds = schedule_cache[(trip_id, stop_id)]
-                        # This is a bit tricky since real-time 'arrival' might be for a different day
-                        # if the trip crosses midnight. For now, simple day-of calculation.
-                        if stu.HasField("arrival") and stu.arrival.time:
+                        if next_stu.HasField("arrival") and next_stu.arrival.time:
                             actual_seconds = get_seconds_since_start_of_day(
-                                stu.arrival.time
+                                next_stu.arrival.time
                             )
                             delay_seconds = actual_seconds - scheduled_seconds
-                        elif stu.HasField("departure") and stu.departure.time:
+                        elif next_stu.HasField("departure") and next_stu.departure.time:
                             actual_seconds = get_seconds_since_start_of_day(
-                                stu.departure.time
+                                next_stu.departure.time
                             )
                             delay_seconds = actual_seconds - scheduled_seconds
 
@@ -149,6 +159,7 @@ def main():
                             "trip_id": trip_id,
                             "stop_id": stop_id,
                             "delay_seconds": delay_seconds,
+                            "next_stop_id": stop_id,  # Persist explicitly as next_stop_id
                             "route_id": trip_update.trip.route_id,
                             "timestamp": datetime.datetime.fromtimestamp(
                                 header_timestamp
@@ -161,6 +172,7 @@ def main():
                         collection.replace_one(
                             {"_id": obs_id}, observation, upsert=True
                         )
+
                         # print(f"Recorded delay: {trip_id} at {stop_id} = {delay_seconds}s")
 
     except KeyboardInterrupt:
