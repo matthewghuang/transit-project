@@ -153,6 +153,8 @@ class NextBusesResponse(BaseModel):
     actual_time: Optional[str] = None
     predicted_time: Optional[str] = None
     arrive_by_time: Optional[str] = None  # ADV-01: 95th percentile recommendation
+    confidence: float = 95.0
+    low_confidence: bool = False
     is_stale: bool = False  # ADV-02: Ghost bus flag (no update in >5 min)
     last_updated: Optional[str] = None  # ADV-02: Last real-time update timestamp
     model_config = BASE_MODEL_CONFIG
@@ -179,9 +181,17 @@ class DistributionResponse(BaseModel):
     median: float
     p05: Optional[float] = None  # ADV-01: 5th percentile (minutes)
     p95: Optional[float] = None  # ADV-01: 95th percentile (minutes)
+    confidence: float = 95.0
+    low_confidence: bool = False
     observation_count: int = 0
     buckets: List[HistogramBucket]
     model_config = BASE_MODEL_CONFIG
+
+
+def snap_percentile(p: float) -> float:
+    """Snaps input percentile to the nearest discrete step: 50, 75, 90, 95, 99."""
+    steps = [50.0, 75.0, 90.0, 95.0, 99.0]
+    return min(steps, key=lambda x: abs(x - p))
 
 
 @app.get(
