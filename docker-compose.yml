@@ -52,6 +52,22 @@ services:
         reservations:
           memory: 128M
 
+  timescale:
+    image: timescale/timescaledb:latest-pg17
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: transit
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+        reservations:
+          memory: 256M
+
   # Optional: You might want to disable mongo-express on a B1s to save RAM
   mongo-express:
     image: mongo-express
