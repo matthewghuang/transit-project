@@ -25,6 +25,7 @@ pool = None
 # In-memory GTFS lookups
 stops_lookup: Dict[str, dict] = {}
 stop_code_to_id: Dict[str, str] = {}
+id_to_stop_code: Dict[str, str] = {}
 routes_lookup: Dict[str, str] = {}
 stop_times_lookup: Dict[str, list] = {}  # route_id -> route_short_name
 
@@ -61,7 +62,7 @@ def load_stop_times():
 
 def load_stops():
     """Load stop metadata from GTFS static stops.txt into memory."""
-    global stops_lookup, stop_code_to_id
+    global stops_lookup, stop_code_to_id, id_to_stop_code
     stops_path = os.getenv("GTFS_STOPS_PATH", "google_transit/stops.txt")
     try:
         with open(stops_path, "r", encoding="utf-8-sig") as f:
@@ -76,6 +77,7 @@ def load_stops():
                 }
                 if code:
                     stop_code_to_id[code] = sid
+                    id_to_stop_code[sid] = code
         print(f"Loaded {len(stops_lookup)} stops from {stops_path}")
     except Exception as e:
         print(f"Warning: Could not load stops.txt: {e}")
@@ -206,7 +208,7 @@ async def search_stops(q: str = Query(..., min_length=1)):
                 # Priority 2: Fuzzy name match
                 rows = await conn.fetch(
                     """
-                    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, 
+                    SELECT s.stop_id, s.stop_code, s.stop_name, s.stop_lat, s.stop_lon, 
                            COALESCE(obs.cnt, 0) as observation_count,
                            COALESCE(obs.route_ids, '{}') as route_ids
                     FROM stops s
@@ -225,7 +227,7 @@ async def search_stops(q: str = Query(..., min_length=1)):
                 # Search by route: find stops that have observations for this route
                 rows = await conn.fetch(
                     """
-                    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, 
+                    SELECT s.stop_id, s.stop_code, s.stop_name, s.stop_lat, s.stop_lon, 
                            COALESCE(obs.cnt, 0) as observation_count,
                            COALESCE(obs.route_ids, '{}') as route_ids
                     FROM stops s
@@ -244,7 +246,7 @@ async def search_stops(q: str = Query(..., min_length=1)):
                 # Fuzzy name match
                 rows = await conn.fetch(
                     """
-                    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, 
+                    SELECT s.stop_id, s.stop_code, s.stop_name, s.stop_lat, s.stop_lon, 
                            COALESCE(obs.cnt, 0) as observation_count,
                            COALESCE(obs.route_ids, '{}') as route_ids
                     FROM stops s
@@ -263,6 +265,7 @@ async def search_stops(q: str = Query(..., min_length=1)):
             stops = []
             for row in rows:
                 sid = row["stop_id"]
+                scode = row["stop_code"]
                 # Map numeric route_ids to route_short_names
                 route_names = set()
                 if row["route_ids"]:
@@ -272,7 +275,7 @@ async def search_stops(q: str = Query(..., min_length=1)):
 
                 stops.append(
                     StopInfo(
-                        id=sid,
+                        id=scode if scode else sid,
                         name=row["stop_name"],
                         latitude=row["stop_lat"],
                         longitude=row["stop_lon"],
@@ -365,9 +368,10 @@ async def get_stops():
                             if rid:
                                 route_names.add(routes_lookup.get(rid, rid))
 
+                    scode = id_to_stop_code.get(sid)
                     stops.append(
                         StopInfo(
-                            id=sid,
+                            id=scode if scode else sid,
                             name=meta["name"],
                             latitude=meta["lat"],
                             longitude=meta["lon"],
@@ -394,6 +398,7 @@ async def get_delay_distribution(stop_id: str):
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
 
+    input_id = stop_id
     # Resolve stop_code to stop_id if necessary
     if stop_id in stop_code_to_id:
         stop_id = stop_code_to_id[stop_id]
@@ -427,7 +432,7 @@ async def get_delay_distribution(stop_id: str):
 
             if not rows:
                 # Fallback to all data if window is empty, or return empty distribution
-                return DistributionResponse(stop_id=stop_id, median=0.0, buckets=[])
+                return DistributionResponse(stop_id=input_id, median=0.0, buckets=[])
 
             delays = np.array([row["delay_seconds"] for row in rows])
 
@@ -446,7 +451,7 @@ async def get_delay_distribution(stop_id: str):
                     buckets.append(HistogramBucket(minute=int(edge), count=int(count)))
 
             return DistributionResponse(
-                stop_id=stop_id, median=median_minutes, buckets=buckets
+                stop_id=input_id, median=median_minutes, buckets=buckets
             )
 
     except Exception as e:
@@ -467,6 +472,7 @@ async def get_next_buses(stop_id: str):
     if pool is None:
         raise HTTPException(status_code=500, detail="Database pool not initialized")
 
+    input_id = stop_id
     # Resolve stop_code to stop_id if necessary
     if stop_id in stop_code_to_id:
         stop_id = stop_code_to_id[stop_id]
@@ -487,7 +493,7 @@ async def get_next_buses(stop_id: str):
                 break
 
     if not next_bus:
-        return NextBusesResponse(stop_id=stop_id)
+        return NextBusesResponse(stop_id=input_id)
 
     sched_sec, sched_str, trip_id = next_bus
 
@@ -552,7 +558,7 @@ async def get_next_buses(stop_id: str):
     clean_sched_str = f"{sh:02d}:{sm:02d}:{ss:02d}"
 
     return NextBusesResponse(
-        stop_id=stop_id,
+        stop_id=input_id,
         scheduled_time=clean_sched_str,
         actual_time=actual_str,
         predicted_time=predicted_str,
