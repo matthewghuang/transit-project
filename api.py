@@ -543,9 +543,9 @@ async def get_delay_distribution(
 
 @app.get(
     "/api/stops/{stop_id}/next_buses",
-    response_model=NextBusesResponse,
+    response_model=List[NextBusesResponse],
     summary="Get Next Bus Predicted Times",
-    description="Returns scheduled, actual, and predicted times for the next bus.",
+    description="Returns scheduled, actual, and predicted times for the next bus for each unique route serving the stop.",
 )
 async def get_next_buses(
     stop_id: str,
@@ -564,7 +564,7 @@ async def get_next_buses(
     snapped_conf = snap_percentile(confidence)
     target_p = snapped_conf / 100.0
 
-    # 1. Find next scheduled bus
+    # 1. Find next scheduled bus for each unique route
     now = datetime.datetime.now()
     now_sec = now.hour * 3600 + now.minute * 60 + now.second
 
@@ -572,120 +572,127 @@ async def get_next_buses(
     if now.hour < 3:
         now_sec += 24 * 3600
 
-    next_bus = None
+    next_buses_by_route = {}
     if stop_id in stop_times_lookup:
-        for arr_sec, arr_str, trip_id in stop_times_lookup[stop_id]:
+        for arr_sec, arr_str, trip_id, route_id in stop_times_lookup[stop_id]:
             if arr_sec >= now_sec:
-                next_bus = (arr_sec, arr_str, trip_id)
-                break
+                if route_id not in next_buses_by_route:
+                    next_buses_by_route[route_id] = (arr_sec, arr_str, trip_id)
 
-    if not next_bus:
-        return NextBusesResponse(stop_id=input_id, confidence=snapped_conf)
+    if not next_buses_by_route:
+        return []
 
-    sched_sec, sched_str, trip_id = next_bus
+    results = []
+    async with pool.acquire() as conn:
+        for route_id, bus_data in next_buses_by_route.items():
+            sched_sec, sched_str, trip_id = bus_data
 
-    actual_str = None
-    predicted_str = None
-    arrive_by_str = None
-    is_stale = False
-    last_updated_str = None
-    low_confidence = False
+            actual_str = None
+            predicted_str = None
+            arrive_by_str = None
+            is_stale = False
+            last_updated_str = None
+            low_confidence = False
 
-    try:
-        async with pool.acquire() as conn:
-            # 2. Get real-time delay for this trip + staleness check (ADV-02)
-            row = await conn.fetchrow(
-                "SELECT delay_seconds, updated_at FROM trip_delays WHERE trip_id = $1",
-                trip_id,
-            )
-            current_delay = row["delay_seconds"] if row else None
-
-            if row and row["updated_at"]:
-                last_updated = row["updated_at"]
-                last_updated_str = last_updated.strftime("%H:%M:%S")
-                # ADV-02: Ghost bus detection — stale if no update in >5 minutes
-                now_utc = datetime.datetime.now(datetime.timezone.utc)
-                age = (now_utc - last_updated).total_seconds()
-                if age > 300:  # 5 minutes
-                    is_stale = True
-
-            if current_delay is not None:
-                # Calculate actual time
-                actual_sec = sched_sec + current_delay
-                h = (actual_sec // 3600) % 24
-                m = (actual_sec % 3600) // 60
-                s = actual_sec % 60
-                actual_str = f"{h:02d}:{m:02d}:{s:02d}"
-
-            # 3. Calculate predicted time based on historical median + dynamic confidence arrive_by
-            now_utc = datetime.datetime.now(datetime.timezone.utc)
-            window_start = (now_utc - datetime.timedelta(hours=1)).time()
-            window_end = (now_utc + datetime.timedelta(hours=1)).time()
-            is_weekend = now_utc.weekday() >= 5
-            day_type = "weekend" if is_weekend else "weekday"
-
-            # D-03: Use approximate aggregates if available, otherwise exact sorting
-            # We use PERCENTILE_CONT (exact) since percentile_agg is missing in the environment
-            stats_query = """
-                WITH data AS (
-                    SELECT delay_seconds 
-                    FROM delay_observations 
-                    WHERE stop_id = $1 
-                    AND observed_at::time >= $2 
-                    AND observed_at::time <= $3
-                    AND (
-                        ($4 = 'weekend' AND EXTRACT(DOW FROM observed_at) IN (0, 6))
-                        OR
-                        ($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
-                    )
+            try:
+                # 2. Get real-time delay for this trip + staleness check (ADV-02)
+                row = await conn.fetchrow(
+                    "SELECT delay_seconds, updated_at FROM trip_delays WHERE trip_id = $1",
+                    trip_id,
                 )
-                SELECT 
-                    COUNT(*) as obs_count,
-                    percentile_cont(0.5) WITHIN GROUP (ORDER BY delay_seconds) as median,
-                    percentile_cont($5) WITHIN GROUP (ORDER BY delay_seconds) as pn
-                FROM data
-            """
-            stats = await conn.fetchrow(
-                stats_query, stop_id, window_start, window_end, day_type, target_p
+                current_delay = row["delay_seconds"] if row else None
+
+                if row and row["updated_at"]:
+                    last_updated = row["updated_at"]
+                    last_updated_str = last_updated.strftime("%H:%M:%S")
+                    # ADV-02: Ghost bus detection — stale if no update in >5 minutes
+                    now_utc = datetime.datetime.now(datetime.timezone.utc)
+                    age = (now_utc - last_updated).total_seconds()
+                    if age > 300:  # 5 minutes
+                        is_stale = True
+
+                if current_delay is not None:
+                    # Calculate actual time
+                    actual_sec = sched_sec + current_delay
+                    h = (actual_sec // 3600) % 24
+                    m = (actual_sec % 3600) // 60
+                    s = actual_sec % 60
+                    actual_str = f"{h:02d}:{m:02d}:{s:02d}"
+
+                # 3. Calculate predicted time based on historical median + dynamic confidence arrive_by
+                now_utc = datetime.datetime.now(datetime.timezone.utc)
+                window_start = (now_utc - datetime.timedelta(hours=1)).time()
+                window_end = (now_utc + datetime.timedelta(hours=1)).time()
+                is_weekend = now_utc.weekday() >= 5
+                day_type = "weekend" if is_weekend else "weekday"
+
+                stats_query = """
+					WITH data AS (
+						SELECT delay_seconds 
+						FROM delay_observations 
+						WHERE stop_id = $1 
+						AND observed_at::time >= $2 
+						AND observed_at::time <= $3
+						AND (
+							($4 = 'weekend' AND EXTRACT(DOW FROM observed_at) IN (0, 6))
+							OR
+							($4 = 'weekday' AND EXTRACT(DOW FROM observed_at) IN (1, 2, 3, 4, 5))
+						)
+					)
+					SELECT 
+						COUNT(*) as obs_count,
+						percentile_cont(0.5) WITHIN GROUP (ORDER BY delay_seconds) as median,
+						percentile_cont($5) WITHIN GROUP (ORDER BY delay_seconds) as pn
+					FROM data
+				"""
+                stats = await conn.fetchrow(
+                    stats_query, stop_id, window_start, window_end, day_type, target_p
+                )
+
+                if stats and stats["obs_count"] > 0:
+                    obs_count = stats["obs_count"]
+                    low_confidence = obs_count < 10
+
+                    median_delay = int(stats["median"] or 0)
+                    pred_sec = sched_sec + median_delay
+                    ph = (pred_sec // 3600) % 24
+                    pm = (pred_sec % 3600) // 60
+                    ps = pred_sec % 60
+                    predicted_str = f"{ph:02d}:{pm:02d}:{ps:02d}"
+
+                    # ADV-01: Dynamic "Arrive By" recommendation
+                    pn_delay = int(stats["pn"] or 0)
+                    arrive_by_sec = min(sched_sec, sched_sec + pn_delay)
+                    ah = (arrive_by_sec // 3600) % 24
+                    am = (arrive_by_sec % 3600) // 60
+                    asec = arrive_by_sec % 60
+                    arrive_by_str = f"{ah:02d}:{am:02d}:{asec:02d}"
+
+            except Exception as e:
+                print(f"Error calculating next bus for route {route_id}: {e}")
+
+            # Format scheduled_time cleanly
+            sh = (sched_sec // 3600) % 24
+            sm = (sched_sec % 3600) // 60
+            ss = sched_sec % 60
+            clean_sched_str = f"{sh:02d}:{sm:02d}:{ss:02d}"
+
+            results.append(
+                NextBusesResponse(
+                    stop_id=input_id,
+                    route_id=route_id,
+                    route_name=routes_lookup.get(route_id, route_id),
+                    scheduled_time=clean_sched_str,
+                    actual_time=actual_str,
+                    predicted_time=predicted_str,
+                    arrive_by_time=arrive_by_str,
+                    confidence=snapped_conf,
+                    low_confidence=low_confidence,
+                    is_stale=is_stale,
+                    last_updated=last_updated_str,
+                )
             )
 
-            if stats and stats["obs_count"] > 0:
-                obs_count = stats["obs_count"]
-                low_confidence = obs_count < 10
-
-                median_delay = int(stats["median"] or 0)
-                pred_sec = sched_sec + median_delay
-                ph = (pred_sec // 3600) % 24
-                pm = (pred_sec % 3600) // 60
-                ps = pred_sec % 60
-                predicted_str = f"{ph:02d}:{pm:02d}:{ps:02d}"
-
-                # ADV-01: Dynamic "Arrive By" recommendation
-                # D-05: Safety cap - arrive_by_sec = min(sched_sec, sched_sec + percentile_delay_sec)
-                pn_delay = int(stats["pn"] or 0)
-                arrive_by_sec = min(sched_sec, sched_sec + pn_delay)
-                ah = (arrive_by_sec // 3600) % 24
-                am = (arrive_by_sec % 3600) // 60
-                asec = arrive_by_sec % 60
-                arrive_by_str = f"{ah:02d}:{am:02d}:{asec:02d}"
-
-    except Exception as e:
-        print(f"Error calculating next buses: {e}")
-
-    # Format scheduled_time cleanly
-    sh = (sched_sec // 3600) % 24
-    sm = (sched_sec % 3600) // 60
-    ss = sched_sec % 60
-    clean_sched_str = f"{sh:02d}:{sm:02d}:{ss:02d}"
-
-    return NextBusesResponse(
-        stop_id=input_id,
-        scheduled_time=clean_sched_str,
-        actual_time=actual_str,
-        predicted_time=predicted_str,
-        arrive_by_time=arrive_by_str,
-        confidence=snapped_conf,
-        low_confidence=low_confidence,
-        is_stale=is_stale,
-        last_updated=last_updated_str,
-    )
+    # Sort results by scheduled_time
+    results.sort(key=lambda x: x.scheduled_time)
+    return results
