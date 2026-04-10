@@ -1,41 +1,63 @@
 # Requirements: Translink Delay Distribution Dashboard
 
-**Defined:** April 10, 2026
+**Defined:** 2026-04-10
 **Core Value:** Empower commuters with probabilistic insights into bus reliability, allowing for better-informed travel decisions beyond simple real-time estimates.
 
-## v1 Requirements (SHIPPED)
+## v1.2 Requirements
 
-These requirements were delivered in Milestone v1.0.
+Active requirements for the current milestone.
 
+### Confidence UI
+
+- [ ] **CONF-01**: User can select discrete intervals (50%, 75%, 90%, 95%, 99%)
+- [ ] **CONF-02**: Saving the selected confidence level in the URL for bookmarking
+- [ ] **CONF-03**: When sliding, the area under the existing delay distribution curve highlights
+
+### Core Logic
+
+- [ ] **CORE-04**: Backend API calculates dynamic percentile windows based on requested confidence
+- [ ] **CORE-05**: "Predicted Time" logic overhaul ensures arrive-by recommendations are always at or before the scheduled time
+
+## Previous Requirements (Shipped)
+
+These requirements were delivered in previous milestones (v1.0, v1.1).
+
+### Core (v1.0)
 - **CORE-01**: User can select a stop by ID or name in the UI.
 - **CORE-02**: User can view a real-time "Minutes Away" countdown for buses arriving at the selected stop.
-- **CORE-03**: User can view a live map showing the current position of vehicles incoming to the selected stop.
 - **REL-01**: Ingestion consumer calculates schedule deviation by joining real-time position data with static `stop_times.txt`.
 - **REL-02**: Historical delay observations are stored in PostgreSQL/TimescaleDB with stop, route, and time-of-day metadata.
-- **REL-03**: User can view a Probability Density Function (PDF) curve showing the likelihood of different delay durations for the selected stop/time.
+- **REL-03**: User can view a PDF curve showing the likelihood of different delay durations for the selected stop/time.
 - **REL-04**: User can view a "Typical Delay" summary statistic (e.g., "Usually arrives 2m late").
 
-## Active Requirements (v1.1)
-
-### Search-First Pivot (SRCH)
-
-- **SRCH-01**: User can search for a bus stop by intersection (e.g., "Main & 41st").
+### Search & Advanced (v1.1)
+- **SRCH-01**: User can search for a bus stop by intersection.
 - **SRCH-02**: User can search for a bus stop by its unique stop number.
-- **SRCH-03**: Backend support for full-text search or fuzzy matching on stop intersections/names.
-- **SRCH-04**: Results display showing Scheduled time, Actual (real-time) time, and Predicted (historical) arrival time for the next bus.
+- **SRCH-03**: Backend support for full-text search or fuzzy matching.
+- **SRCH-04**: Results display showing Scheduled time, Actual time, and Predicted arrival time.
 - **SRCH-05**: Mobile-optimized search interface with auto-suggest capabilities.
-
-### Advanced Reliability (ADV)
-
-- **ADV-01**: Confidence-based arrival window recommendations (e.g., "Arrive by X for 95% certainty").
-- **ADV-02**: "Ghost Bus" detection and UI indicators for stale vehicle updates.
+- **ADV-01**: Confidence-based arrival window recommendations.
+- **ADV-02**: "Ghost Bus" detection and UI indicators.
 - **ADV-03**: Trip cancellation historical logging and impact analysis.
+- **UIO-01**: [Completed in v1.1]
+- **UIO-04**: [Completed in v1.1]
 
-## Out of Scope / Deferred
+## v2 Requirements
 
-- **UIO-03**: Optimize the map interaction for high-density stop areas (REMOVED: Map feature discontinued).
-- **CORE-03**: User can view a live map showing the current position of vehicles incoming to the selected stop (REMOVED: Map feature discontinued).
-- **UIO-02**: Implement a themeable design system (Dark/Light mode support).
+Deferred to future release. Tracked but not in current roadmap.
+
+### Confidence UI
+- **CONF-04**: Plain-English Labels: Translates percentages into actionable advice (e.g. 50% = "Living Dangerously")
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Continuous/Granular Sliders (e.g., 87.3%) | Statistically meaningless for our data volume and confusing for UX. Prevents backend caching. |
+| Map feature / Live Map | REMOVED: Map feature discontinued (CORE-03, UIO-03). |
+| Themeable design system | Deferred (UIO-02). |
 
 ## Traceability
 
@@ -55,14 +77,19 @@ These requirements were delivered in Milestone v1.0.
 | ADV-01 | Phase 5 | Complete |
 | ADV-02 | Phase 5 | Complete |
 | ADV-03 | Phase 5 | Complete |
-| CORE-03 | - | Deferred |
 | UIO-01 | Phase 4 | Complete |
-| UIO-02 | - | Deferred |
-| UIO-03 | - | Deferred |
 | UIO-04 | Phase 4 | Complete |
+| CONF-01 | Phase 6 | Pending |
+| CONF-02 | Phase 6 | Pending |
+| CONF-03 | Phase 6 | Pending |
+| CORE-04 | Phase 6 | Pending |
+| CORE-05 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 6 active, 1 deferred
-- v1.1 requirements: 8 active, 2 deferred
-- Mapped to phases: 14/14 (active)
+- v1.2 requirements: 5 total
+- Mapped to phases: 21
 - Unmapped: 0 ✓
+
+---
+*Requirements defined: 2026-04-10*
+*Last updated: 2026-04-10 after v1.2 planning*
