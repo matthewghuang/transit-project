@@ -41,7 +41,7 @@
 - [x] 04-06-PLAN.md — UAT Final Fixes (Centering & Data)
 - [x] 04-07-PLAN.md — Gap Closure: Actual Time Missing Fix
 - [x] 04-08-PLAN.md — Gap Closure: Stop Code ID Resolution Fix
-- [ ] 04-09-PLAN.md — Gap Closure: Stop Code Display Fix (Conflicting IDs)
+- [x] 04-09-PLAN.md — Gap Closure: Stop Code Display Fix (Conflicting IDs)
 **UI hint**: yes
 
 ### Phase 5: Advanced Reliability Insights
