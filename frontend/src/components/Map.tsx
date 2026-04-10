@@ -1,8 +1,10 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { LatLngTuple } from "leaflet";
 import { usePositions } from "../hooks/usePositions";
-import { CSSProperties, useMemo } from "react";
+import { CSSProperties, useMemo, lazy, Suspense } from "react";
 import { useFilterStore } from "../stores/filterStore";
+
+const DelayDistributionChart = lazy(() => import("./DelayDistributionChart"));
 
 const centerPosition: LatLngTuple = [49.246292, -123.116226];
 
@@ -88,6 +90,10 @@ const Map: React.FC<{ className?: string; style?: CSSProperties }> = ({
                     ))
                   )}
                 </div>
+
+                <Suspense fallback={<div>Loading chart...</div>}>
+                  <DelayDistributionChart stopId={stop.id} />
+                </Suspense>
               </div>
             </div>
           </Popup>
