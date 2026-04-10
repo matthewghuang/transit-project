@@ -185,6 +185,46 @@ main {
   color: var(--primary-color);
 }
 
+.tag-wrapper {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.2s;
+}
+
+.tag-wrapper:hover {
+  border-color: var(--primary-color);
+}
+
+.tag-wrapper .tag-btn {
+  border: none;
+  border-radius: 0;
+  padding-right: 0.5rem;
+}
+
+.tag-remove-btn {
+  background: transparent;
+  border: none;
+  padding: 0 0.75rem 0 0.25rem;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background-color 0.2s;
+  height: 100%;
+}
+
+.tag-remove-btn:hover {
+  color: #ef4444;
+  background-color: #fee2e2;
+}
+
 /* Dashboard & Triad Styles */
 .dashboard-header {
   height: var(--header-height);

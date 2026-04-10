@@ -72,6 +72,13 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({ onSelectStop }) => {
     onSelectStop(stop.id);
   };
 
+  const handleRemoveRecent = (e: React.MouseEvent, stopId: string) => {
+    e.stopPropagation();
+    const updated = recentSearches.filter(s => s.id !== stopId);
+    setRecentSearches(updated);
+    localStorage.setItem('recent_searches', JSON.stringify(updated));
+  };
+
   return (
     <div className="hero-container">
       <div className="hero-content">
@@ -108,9 +115,18 @@ export const HeroSearch: React.FC<HeroSearchProps> = ({ onSelectStop }) => {
             <h3>Recent Searches</h3>
             <div className="recent-tags">
               {recentSearches.map(stop => (
-                <button key={stop.id} className="tag-btn" onClick={() => onSelectStop(stop.id)}>
-                  {stop.name}
-                </button>
+                <div key={stop.id} className="tag-wrapper">
+                  <button className="tag-btn" onClick={() => onSelectStop(stop.id)}>
+                    {stop.name}
+                  </button>
+                  <button 
+                    className="tag-remove-btn" 
+                    onClick={(e) => handleRemoveRecent(e, stop.id)}
+                    aria-label={`Remove ${stop.name} from recent searches`}
+                  >
+                    &times;
+                  </button>
+                </div>
               ))}
             </div>
           </div>
