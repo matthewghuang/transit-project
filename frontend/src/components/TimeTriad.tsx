@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import ky from 'ky';
-import { useNextBuses } from '../hooks/useNextBuses';
+import { NextBusesResponse } from '../hooks/useNextBuses';
 import { useFilterStore } from '../stores/filterStore';
 import DelayDistributionChart from './DelayDistributionChart';
 
 interface TimeTriadProps {
   stopId: string;
+  arrival: NextBusesResponse;
 }
 
 interface Bucket {
@@ -23,8 +24,7 @@ interface DistributionData {
   buckets: Bucket[];
 }
 
-export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
-  const { data, loading, error } = useNextBuses(stopId);
+export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId, arrival }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const confidenceLevel = useFilterStore((state) => state.confidenceLevel);
   const setConfidenceLevel = useFilterStore((state) => state.setConfidenceLevel);
@@ -36,14 +36,12 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
     enabled: !!stopId && isExpanded,
   });
 
-  if (loading) return <div className="triad-loading">Loading predictions...</div>;
-  if (error) return <div className="triad-error">Failed to load predictions</div>;
-  if (!data || !data.scheduled_time) return <div className="triad-empty">No upcoming buses found</div>;
+  if (!arrival || !arrival.scheduled_time) return <div className="triad-empty">No upcoming buses found</div>;
 
   // Local Arrive-By Calculation (Zero-latency)
-  let arriveByDisplay = data.arrive_by_time;
+  let arriveByDisplay = arrival.arrive_by_time;
   
-  if (distData && distData.buckets.length > 0 && data.scheduled_time) {
+  if (distData && distData.buckets.length > 0 && arrival.scheduled_time) {
     const sortedBuckets = [...distData.buckets].sort((a, b) => a.minute - b.minute);
     const totalObservations = sortedBuckets.reduce((sum, b) => sum + b.count, 0);
     const targetCount = (confidenceLevel / 100) * totalObservations;
@@ -59,7 +57,7 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
     }
 
     // Calculate arrive by: scheduled_time (HH:MM:SS) - cutoffMinute
-    const [h, m, s] = data.scheduled_time.split(':').map(Number);
+    const [h, m, s] = arrival.scheduled_time.split(':').map(Number);
     const scheduledDate = new Date();
     scheduledDate.setHours(h, m, s, 0);
     
@@ -68,20 +66,20 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
   }
 
   const times = [
-    { label: 'Scheduled', time: data.scheduled_time },
-    { label: 'Actual', time: data.actual_time || null },
-    { label: 'Predicted', time: data.predicted_time || null },
+    { label: 'Scheduled', time: arrival.scheduled_time },
+    { label: 'Actual', time: arrival.actual_time || null },
+    { label: 'Predicted', time: arrival.predicted_time || null },
   ];
 
   // Hero Time logic: Priority is Actual > Predicted > Scheduled
-  let heroTimeObj = { label: 'Scheduled', time: data.scheduled_time };
+  let heroTimeObj = { label: 'Scheduled', time: arrival.scheduled_time };
   let heroStatus = 'Scheduled';
 
-  if (data.actual_time) {
-    heroTimeObj = { label: 'Actual', time: data.actual_time };
+  if (arrival.actual_time) {
+    heroTimeObj = { label: 'Actual', time: arrival.actual_time };
     heroStatus = 'Real-time';
-  } else if (data.predicted_time) {
-    heroTimeObj = { label: 'Predicted', time: data.predicted_time };
+  } else if (arrival.predicted_time) {
+    heroTimeObj = { label: 'Predicted', time: arrival.predicted_time };
     heroStatus = '';
   }
 
@@ -92,16 +90,23 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
       setIsExpanded(!isExpanded);
     }}>
       {/* ADV-02: Ghost bus warning banner */}
-      {data.is_stale && (
+      {arrival.is_stale && (
         <div className="ghost-bus-warning">
           <span className="ghost-icon">&#x26A0;</span>
-          <span>Stale Data — GPS lost{data.last_updated ? ` (last update: ${data.last_updated})` : ''}</span>
+          <span>Stale Data — GPS lost{arrival.last_updated ? ` (last update: ${arrival.last_updated})` : ''}</span>
+        </div>
+      )}
+
+      {arrival.route_name && (
+        <div className="route-header">
+          <span className="route-label">Route</span>
+          <span className="route-name">{arrival.route_name}</span>
         </div>
       )}
 
       <div className="hero-time-section">
         <div className="hero-label">{heroTimeObj.label} Time</div>
-        <div className={`hero-display ${data.is_stale ? 'stale' : ''}`}>{heroTimeObj.time}</div>
+        <div className={`hero-display ${arrival.is_stale ? 'stale' : ''}`}>{heroTimeObj.time}</div>
         {heroStatus && (
           <div className="hero-status">
             {heroStatus}
@@ -110,10 +115,10 @@ export const TimeTriad: React.FC<TimeTriadProps> = ({ stopId }) => {
       </div>
 
       {/* ADV-01: Arrive-by recommendation */}
-      {(arriveByDisplay || data.arrive_by_time) && (
+      {(arriveByDisplay || arrival.arrive_by_time) && (
         <div className="arrive-by-section">
           <div className="arrive-by-label">Arrive by</div>
-          <div className="arrive-by-time">{arriveByDisplay || data.arrive_by_time}</div>
+          <div className="arrive-by-time">{arriveByDisplay || arrival.arrive_by_time}</div>
           <div className="arrive-by-confidence">{confidenceLevel}% confidence</div>
         </div>
       )}
