@@ -111,12 +111,12 @@ async def get_all_vehicles():
                 )
 
             return vehicles
-        except Exception as e:
-            print(f"Error fetching vehicles: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"An error occurred while fetching vehicle data: {e}",
-            )
+    except Exception as e:
+        print(f"Error fetching vehicles: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while fetching vehicle data: {e}",
+        )
 
 
 @app.get(
@@ -186,4 +186,3 @@ async def get_delay_distribution(stop_id: str):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while calculating delay distribution: {e}",
         )
-
