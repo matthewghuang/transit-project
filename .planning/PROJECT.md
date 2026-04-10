@@ -33,10 +33,10 @@ Empower commuters with probabilistic insights into bus reliability, allowing for
 - ✓ Dynamic confidence intervals with backend API support — v1.2
 - ✓ Interactive Radix UI Slider with zero-latency visual feedback — v1.2
 - ✓ Dynamic chart shading and Arrive-By safety logic — v1.2
+- ✓ Backend API support for arrivals from all unique routes at a stop — v1.3
 
 ### Active
 
-- [ ] **MULT-01**: Backend API update to return arrivals for all unique routes at a stop
 - [ ] **MULT-02**: Horizontal Carousel UI for navigating multiple bus arrival cards
 - [ ] **MULT-03**: Refactor TimeTriad to work within a carousel item context
 
@@ -48,9 +48,10 @@ Empower commuters with probabilistic insights into bus reliability, allowing for
 
 ## Context
 
-Shipped v1.0 with a complete ingestion, storage, and visualization pipeline.
+Shipped v1.2 with dynamic confidence intervals. 
+Current focus is v1.3 Multi-Bus Stop Carousel. 
+Phase 08 complete — Backend API refactored to return multi-route arrays.
 Tech stack: Python 3.13, FastAPI, Kafka, TimescaleDB, React 19.
-The system now calculates delays by joining real-time `TripUpdate` messages with static schedules and visualizes the likelihood of lateness for commuters.
 
 ## Constraints
 
@@ -68,4 +69,4 @@ The system now calculates delays by joining real-time `TripUpdate` messages with
 | Area Chart Visualization | Provides an intuitive visual representation of probability density for commuters. | ✓ Good |
 
 ---
-*Last updated: April 10, 2026 after milestone v1.3 initialization*
+*Last updated: April 10, 2026 after Phase 08 completion*
