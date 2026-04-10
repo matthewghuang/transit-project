@@ -92,6 +92,29 @@ async def init_db():
             );
         """)
 
+        # Create stops table
+        await conn.execute("""
+            CREATE TABLE IF NOT EXISTS stops (
+                stop_id TEXT PRIMARY KEY,
+                stop_code TEXT,
+                stop_name TEXT,
+                stop_desc TEXT,
+                stop_lat DOUBLE PRECISION,
+                stop_lon DOUBLE PRECISION,
+                zone_id TEXT,
+                stop_url TEXT,
+                location_type INTEGER,
+                parent_station TEXT,
+                wheelchair_boarding INTEGER
+            );
+        """)
+
+        # Enable pg_trgm extension and create index for fuzzy search
+        await conn.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
+        await conn.execute("""
+            CREATE INDEX IF NOT EXISTS stops_name_trgm_idx ON stops USING gist (stop_name gist_trgm_ops);
+        """)
+
         # Convert to hypertable
         try:
             await conn.execute(

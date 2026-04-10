@@ -172,6 +172,94 @@ class DistributionResponse(BaseModel):
 
 
 @app.get(
+    "/api/stops/search",
+    response_model=List[StopInfo],
+    summary="Search for Stops",
+    description="Fuzzy search for stops by name or exact search by stop_id.",
+)
+async def search_stops(q: str = Query(..., min_length=1)):
+    if pool is None:
+        raise HTTPException(status_code=500, detail="Database pool not initialized")
+
+    try:
+        async with pool.acquire() as conn:
+            # Set similarity threshold for fuzzy search
+            await conn.execute("SELECT set_limit(0.1);")
+
+            # Check if q is a 5-digit number (common stop_id format in some regions,
+            # though Translink uses 5 or 6 digits)
+            is_numeric = q.isdigit() and (len(q) >= 4 and len(q) <= 6)
+
+            if is_numeric:
+                # Priority 1: Exact stop_id match
+                # Priority 2: Fuzzy name match
+                rows = await conn.fetch(
+                    """
+                    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, 
+                           COALESCE(obs.cnt, 0) as observation_count,
+                           COALESCE(obs.route_ids, '{}') as route_ids
+                    FROM stops s
+                    LEFT JOIN (
+                        SELECT stop_id, COUNT(*) as cnt, array_agg(DISTINCT route_id) as route_ids
+                        FROM delay_observations
+                        GROUP BY stop_id
+                    ) obs ON s.stop_id = obs.stop_id
+                    WHERE s.stop_id = $1 OR s.stop_name % $1
+                    ORDER BY (s.stop_id = $1) DESC, similarity(s.stop_name, $1) DESC
+                    LIMIT 20
+                    """,
+                    q,
+                )
+            else:
+                # Fuzzy name match
+                rows = await conn.fetch(
+                    """
+                    SELECT s.stop_id, s.stop_name, s.stop_lat, s.stop_lon, 
+                           COALESCE(obs.cnt, 0) as observation_count,
+                           COALESCE(obs.route_ids, '{}') as route_ids
+                    FROM stops s
+                    LEFT JOIN (
+                        SELECT stop_id, COUNT(*) as cnt, array_agg(DISTINCT route_id) as route_ids
+                        FROM delay_observations
+                        GROUP BY stop_id
+                    ) obs ON s.stop_id = obs.stop_id
+                    WHERE s.stop_name % $1
+                    ORDER BY similarity(s.stop_name, $1) DESC
+                    LIMIT 20
+                    """,
+                    q,
+                )
+
+            stops = []
+            for row in rows:
+                sid = row["stop_id"]
+                # Map numeric route_ids to route_short_names
+                route_names = set()
+                if row["route_ids"]:
+                    for rid in row["route_ids"]:
+                        if rid:
+                            route_names.add(routes_lookup.get(rid, rid))
+
+                stops.append(
+                    StopInfo(
+                        id=sid,
+                        name=row["stop_name"],
+                        latitude=row["stop_lat"],
+                        longitude=row["stop_lon"],
+                        observation_count=row["observation_count"],
+                        routes=list(route_names),
+                    )
+                )
+            return stops
+    except Exception as e:
+        print(f"Error searching stops: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while searching stops: {e}",
+        )
+
+
+@app.get(
     "/api/vehicles/",
     response_model=List[VehicleUpdate],
     summary="Get All Vehicle Positions",
