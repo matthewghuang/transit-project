@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Dynamic Confidence & Arrive-By Times
 status: executing
-last_updated: "2026-04-10T20:02:35.428Z"
+last_updated: "2026-04-10T20:14:51.024Z"
 progress:
-  total_phases: 4
-  completed_phases: 2
-  total_plans: 10
-  completed_plans: 9
-  percent: 90
+  total_phases: 5
+  completed_phases: 3
+  total_plans: 11
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State: Translink Delay Distribution Dashboard
@@ -24,7 +24,7 @@ progress:
 Phase: 6
 Plan: —
 **Status:** Ready to execute
-**Progress:** [█████████░] 90%
+**Progress:** [█████████░] 91%
 
 ## Performance Metrics
 
@@ -58,3 +58,4 @@ Plan: —
 | 260409-uhf | When a user clicks a stop, it should show an additional 3 things: the scheduled time of the next bus, the actual time of the next bus (including delays), and a predicted time of the next bus based on historical delays | 2026-04-10 | b1963a8 | [260409-uhf-when-a-user-clicks-a-stop-it-should-show](./quick/260409-uhf-when-a-user-clicks-a-stop-it-should-show/) |
 | 260410-hef | when clicking a stop it should also show the stop name on the header. | 2026-04-10 | ecb875c | [.planning/quick/260410-hef-when-clicking-a-stop-it-should-also-show/](./quick/260410-hef-when-clicking-a-stop-it-should-also-show/) |
 | Phase 06 P01 | 25m | 3 tasks | 1 files |
+| Phase 07 P01 | 66 | 3 tasks | 3 files |

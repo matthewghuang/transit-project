@@ -9,9 +9,9 @@ Active requirements for the current milestone.
 
 ### Confidence UI
 
-- [ ] **CONF-01**: User can select discrete intervals (50%, 75%, 90%, 95%, 99%)
-- [ ] **CONF-02**: Saving the selected confidence level in the URL for bookmarking
-- [ ] **CONF-03**: When sliding, the area under the existing delay distribution curve highlights
+- [x] **CONF-01**: User can select discrete intervals (50%, 75%, 90%, 95%, 99%)
+- [x] **CONF-02**: Saving the selected confidence level in the URL for bookmarking
+- [x] **CONF-03**: When sliding, the area under the existing delay distribution curve highlights
 
 ### Core Logic
 
@@ -79,9 +79,9 @@ Explicitly excluded. Documented to prevent scope creep.
 | ADV-03 | Phase 5 | Complete |
 | UIO-01 | Phase 4 | Complete |
 | UIO-04 | Phase 4 | Complete |
-| CONF-01 | Phase 7 | Pending |
-| CONF-02 | Phase 7 | Pending |
-| CONF-03 | Phase 7 | Pending |
+| CONF-01 | Phase 7 | Complete |
+| CONF-02 | Phase 7 | Complete |
+| CONF-03 | Phase 7 | Complete |
 | CORE-04 | Phase 6 | Complete |
 | CORE-05 | Phase 6 | Complete |
 
