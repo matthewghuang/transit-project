@@ -197,7 +197,7 @@ async def search_stops(q: str = Query(..., min_length=1)):
             ]
 
             if is_numeric:
-                # Priority 1: Exact stop_id match (weight 1.0)
+                # Priority 1: Exact stop_id or stop_code match
                 # Priority 2: Fuzzy name match
                 rows = await conn.fetch(
                     """
@@ -210,8 +210,8 @@ async def search_stops(q: str = Query(..., min_length=1)):
                         FROM delay_observations
                         GROUP BY stop_id
                     ) obs ON s.stop_id = obs.stop_id
-                    WHERE s.stop_id = $1 OR s.stop_name % $1
-                    ORDER BY (s.stop_id = $1) DESC, similarity(s.stop_name, $1) DESC
+                    WHERE s.stop_id = $1 OR s.stop_code = $1 OR s.stop_name % $1
+                    ORDER BY (s.stop_id = $1 OR s.stop_code = $1) DESC, similarity(s.stop_name, $1) DESC
                     LIMIT 20
                     """,
                     q,
