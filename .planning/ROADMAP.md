@@ -33,9 +33,9 @@
   3. Every search result displays a side-by-side comparison of Scheduled vs. Actual vs. Predicted (Historical) time.
   4. The search interface is primary and optimized for one-handed mobile use.
 **Plans**: 3 plans
-- [ ] 04-01-PLAN.md — Backend Search & Schema Cleanup
-- [ ] 04-02-PLAN.md — Frontend Map Removal & Hero UI
-- [ ] 04-03-PLAN.md — Stop Dashboard & Time Triad
+- [x] 04-01-PLAN.md — Backend Search & Schema Cleanup
+- [x] 04-02-PLAN.md — Frontend Map Removal & Hero UI
+- [x] 04-03-PLAN.md — Stop Dashboard & Time Triad
 **UI hint**: yes
 
 ### Phase 5: Advanced Reliability Insights

@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
-milestone_name: milestone
-status: completed
-last_updated: "2026-04-10T04:11:36.793Z"
+milestone: v1.1
+milestone_name: Advanced Reliability
+status: executing
+last_updated: "2026-04-10T17:18:18.137Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  total_phases: 2
+  completed_phases: 1
+  total_plans: 3
+  completed_plans: 3
   percent: 100
 ---
 
@@ -25,7 +25,7 @@ Phase: 03 (probabilistic-api-visualization) — EXECUTING
 Plan: 1 of 3
 **Phase:** 03
 **Plan:** Not started
-**Status:** v1.0 milestone complete
+**Status:** Ready to execute
 **Progress:** [██████████] 100%
 
 ## Performance Metrics
@@ -57,3 +57,4 @@ Plan: 1 of 3
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260409-uhf | When a user clicks a stop, it should show an additional 3 things: the scheduled time of the next bus, the actual time of the next bus (including delays), and a predicted time of the next bus based on historical delays | 2026-04-10 | b1963a8 | [260409-uhf-when-a-user-clicks-a-stop-it-should-show](./quick/260409-uhf-when-a-user-clicks-a-stop-it-should-show/) |
+| Phase 04 P03 | 45m | 6 tasks | 10 files |
