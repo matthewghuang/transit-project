@@ -102,6 +102,29 @@ async def upsert_vehicle(conn, vehicle_id, route_id, trip_id, lat, lon, updated_
         print(f"Error upserting vehicle {vehicle_id}: {e}")
 
 
+async def upsert_trip_delay(
+    conn, trip_id, route_id, delay_seconds, last_stop_id, updated_at
+):
+    try:
+        await conn.execute(
+            """
+            INSERT INTO trip_delays (trip_id, route_id, delay_seconds, last_stop_id, updated_at)
+            VALUES ($1, $2, $3, $4, $5)
+            ON CONFLICT (trip_id) DO UPDATE SET
+                delay_seconds = EXCLUDED.delay_seconds,
+                last_stop_id = EXCLUDED.last_stop_id,
+                updated_at = EXCLUDED.updated_at;
+        """,
+            trip_id,
+            route_id,
+            delay_seconds,
+            last_stop_id,
+            updated_at,
+        )
+    except Exception as e:
+        print(f"Error upserting trip delay for {trip_id}: {e}")
+
+
 async def main():
     global observation_buffer
     load_schedule()
@@ -203,6 +226,15 @@ async def main():
                                 trip_id,
                                 delay_seconds,
                             )
+                        )
+                        # Also upsert latest trip delay state
+                        await upsert_trip_delay(
+                            conn,
+                            trip_id,
+                            route_id,
+                            delay_seconds,
+                            stop_id,
+                            header_timestamp,
                         )
 
     except KeyboardInterrupt:
