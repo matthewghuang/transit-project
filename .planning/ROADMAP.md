@@ -16,7 +16,9 @@
   1. The system can successfully load and index `stop_times.txt` for rapid lookup.
   2. A Kafka consumer correctly identifies the "next stop" for a vehicle and calculates lateness in seconds relative to the static schedule.
   3. The frontend displays a real-time "Minutes Away" countdown and live vehicle positions for a user-selected stop.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 01-01-PLAN.md — Implement backend ingestion and delay calculation
+- [ ] 01-02-PLAN.md — Update API and Frontend to visualize delays
 **UI hint**: yes
 
 ### Phase 2: Historical Storage & Infrastructure
