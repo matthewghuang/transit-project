@@ -31,9 +31,12 @@
   1. All delay events from the ingestion consumer are stored in PostgreSQL/TimescaleDB with correct metadata (stop, route, time-of-day).
   2. Database performance remains stable under continuous write load from the real-time enricher.
   3. Storage schema supports efficient time-bucketed queries for historical aggregation.
-**Plans**: TBD
+**Plans**: 2 plans
 
-### Phase 3: Probabilistic API & Visualization
+Plans:
+- [ ] 02-01-PLAN.md — Set up TimescaleDB infrastructure and initialize SQL schema
+- [ ] 02-02-PLAN.md — Migrate consumer to SQL batching and update API to SQL backend
+
 **Goal**: Transform raw historical data into actionable probabilistic insights for commuters.
 **Depends on**: Phase 2
 **Requirements**: REL-03, REL-04
