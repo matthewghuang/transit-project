@@ -1,6 +1,7 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import ky from "ky";
+import { useFilterStore } from "../stores/filterStore";
 import {
   AreaChart,
   Area,
@@ -27,6 +28,7 @@ interface DistributionData {
 }
 
 const DelayDistributionChart: React.FC<{ stopId: string }> = ({ stopId }) => {
+  const confidenceLevel = useFilterStore((state) => state.confidenceLevel);
   const { data, isLoading, error } = useQuery<DistributionData>({
     queryKey: ["distribution", stopId],
     queryFn: () => ky.get(`/api/distribution/${stopId}`).json(),
@@ -40,6 +42,26 @@ const DelayDistributionChart: React.FC<{ stopId: string }> = ({ stopId }) => {
 
   // Sort buckets by minute for correct charting
   const sortedBuckets = [...data.buckets].sort((a, b) => a.minute - b.minute);
+
+  // Calculate cutoff minute for current confidence level
+  const totalObservations = sortedBuckets.reduce((sum, b) => sum + b.count, 0);
+  const targetCount = (confidenceLevel / 100) * totalObservations;
+  
+  let cumulativeCount = 0;
+  let cutoffMinute = sortedBuckets[0].minute;
+  for (const bucket of sortedBuckets) {
+    cumulativeCount += bucket.count;
+    cutoffMinute = bucket.minute;
+    if (cumulativeCount >= targetCount) {
+      break;
+    }
+  }
+
+  // Prepare data for Recharts with shaded area
+  const chartData = sortedBuckets.map(b => ({
+    ...b,
+    shadedCount: b.minute <= cutoffMinute ? b.count : null
+  }));
 
   return (
     <div style={{ marginTop: "12px", borderTop: "1px solid #eee", paddingTop: "12px" }}>
@@ -56,24 +78,22 @@ const DelayDistributionChart: React.FC<{ stopId: string }> = ({ stopId }) => {
           }}>
             Median: {data.median.toFixed(1)}m
           </span>
-          {data.p95 !== null && (
-            <span style={{ 
-              background: "#fff3e0", 
-              color: "#e65100", 
-              padding: "2px 6px", 
-              borderRadius: "4px",
-              fontSize: "0.85em",
-              fontWeight: "bold"
-            }}>
-              P95: {data.p95.toFixed(1)}m
-            </span>
-          )}
+          <span style={{ 
+            background: "#fff3e0", 
+            color: "#e65100", 
+            padding: "2px 6px", 
+            borderRadius: "4px",
+            fontSize: "0.85em",
+            fontWeight: "bold"
+          }}>
+            {confidenceLevel}%: {cutoffMinute}m
+          </span>
         </div>
       </div>
       
       <div style={{ width: "100%", height: 120 }}>
         <ResponsiveContainer>
-          <AreaChart data={sortedBuckets} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 5, right: 0, left: -20, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis 
               dataKey="minute" 
@@ -86,28 +106,39 @@ const DelayDistributionChart: React.FC<{ stopId: string }> = ({ stopId }) => {
               formatter={(value: number) => [value, "Observations"]}
               contentStyle={{ fontSize: "12px" }}
             />
-            {/* ADV-01: P95 reference line */}
-            {data.p95 !== null && (
-              <ReferenceLine
-                x={Math.round(data.p95)}
-                stroke="#e65100"
-                strokeDasharray="4 2"
-                label={{ value: "95%", position: "top", fontSize: 9, fill: "#e65100" }}
-              />
-            )}
-            {/* Median reference line */}
+            
+            <ReferenceLine
+              x={cutoffMinute}
+              stroke="#2563eb"
+              strokeDasharray="4 2"
+              label={{ value: `${confidenceLevel}%`, position: "top", fontSize: 9, fill: "#2563eb" }}
+            />
+
             <ReferenceLine
               x={Math.round(data.median)}
               stroke="#2e7d32"
               strokeDasharray="4 2"
               label={{ value: "Med", position: "top", fontSize: 9, fill: "#2e7d32" }}
             />
+            
+            {/* Base Area */}
             <Area
               type="monotone"
               dataKey="count"
               stroke="#2e7d32"
               fill="#81c784"
-              fillOpacity={0.6}
+              fillOpacity={0.2}
+              isAnimationActive={false}
+            />
+            
+            {/* Confidence Area */}
+            <Area
+              type="monotone"
+              dataKey="shadedCount"
+              stroke="#2563eb"
+              fill="#2563eb"
+              fillOpacity={0.2}
+              isAnimationActive={false}
             />
           </AreaChart>
         </ResponsiveContainer>
